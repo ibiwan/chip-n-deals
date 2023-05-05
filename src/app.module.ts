@@ -1,20 +1,18 @@
 import { Module } from '@nestjs/common';
 
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { AuthorsModule } from '@/entities/authors/authors.module';
-import { PostsModule } from '@/entities/posts/posts.module';
+import { ChipModule } from './features/chip/chip.module';
+import { ChipSetModule } from './features/chipSet/chipSet.module';
+import { ChipsGraphqlModule } from './api/graphql.module';
+import { ControllerModule } from './api/rest.controller.module';
+import { DatasourceModule } from './datasource/sqlite.datasource.module';
 
 @Module({
   imports: [
-    AuthorsModule,
-    PostsModule,
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      autoSchemaFile: true,
-      include: [AuthorsModule, PostsModule],
-    }),
-  ]
+    ChipModule,
+    ChipSetModule,
+    ChipsGraphqlModule,
+    ControllerModule,
+    DatasourceModule,
+  ],
 })
-
 export class AppModule {}
