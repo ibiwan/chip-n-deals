@@ -5,7 +5,8 @@ import {
   PrimaryGeneratedColumn
 } from 'typeorm';
 import {  ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
+import { UUID } from 'crypto';
 
 @Entity('chip')
 @ObjectType('Chip')
@@ -24,4 +25,10 @@ export class ChipEntityModel {
   @ManyToOne((type) => ChipSetEntityModel, (chipSet) => chipSet.chips)
   @Field((type) => ChipSetEntityModel)
   chipSet: ChipSetEntityModel;
+}
+
+export class CreateChipDto {
+  color: string;
+  value: number;
+  chipSetOpaqueId: UUID;
 }

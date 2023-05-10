@@ -5,19 +5,22 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ChipModule } from '@/features/chip/chip.module';
 import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 
+const GqlFeatureModules = [
+  ChipModule,
+  ChipSetModule,
+]
+
 @Module({
   imports: [
-    ChipModule,
-    ChipSetModule,
+    ...GqlFeatureModules,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
       include: [
-        ChipModule,
-        ChipSetModule,
+        ...GqlFeatureModules
       ],
       path: 'graphql',
     }),
   ],
 })
-export class ChipsGraphqlModule {}
+export class ChipsGraphqlModule { }

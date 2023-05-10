@@ -1,42 +1,31 @@
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
-import { Controller, Get } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { randomUUID } from 'crypto';
-import { EntityManager, Repository } from 'typeorm';
-import { ChipEntityModel } from '../chip/chip.entityModel';
+import { Body, Controller, Param, Post } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
-@Controller()
+import { ChipSetEntityModel, CreateChipSetDto } from '@/features/chipSet/chipSet.entityModel';
+
+@Controller('chipset')
 export class ChipSetController {
   constructor(
     @InjectEntityManager()
     private em: EntityManager,
-
-    @InjectRepository(ChipSetEntityModel)
-    private chipSetRepository: Repository<ChipSetEntityModel>,
   ) { }
 
-  @Get('populate')
-  populate() {
-    const cs = new ChipSetEntityModel();
-    cs.name = 'yo';
-    cs.opaqueId = randomUUID();
-    cs.chips = [];
+  @Post('create')
+  async create(@Body() createChipSetDto: CreateChipSetDto) {
+    const { name } = createChipSetDto
 
-    const someData: [string, number][] = [
-      ['white', 57],
-      ['red', 3],
-      ['purple', 0.5],
-    ];
-    for (let [color, value] of someData) {
-      const c = new ChipEntityModel();
-      c.color = color;
-      c.value = value;
-      c.chipSet = cs;
+    return this.em.save(
+      new ChipSetEntityModel(name, [])
+    )
+  }
 
-      cs.chips.push(c);
-    }
-    this.em.save(cs);
+  @Post('create/:name')
+  async createWithName(@Param() param: any) {
+    const { name } = param
 
-    return 'ok';
+    return this.em.save(
+      new ChipSetEntityModel(name, [])
+    )
   }
 }

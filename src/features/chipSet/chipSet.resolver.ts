@@ -5,10 +5,12 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { ChipSetEntityModel } from './chipSet.entityModel';
 import { UUID } from 'crypto';
+
+import { ChipService } from '@/features/chip/chip.service';
+
+import { ChipSetEntityModel } from './chipSet.entityModel';
 import { ChipSetService } from './chipSet.service';
-import { ChipService } from '../chip/chip.service';
 
 @Resolver((of) => ChipSetEntityModel)
 export class ChipSetResolver {
@@ -18,12 +20,15 @@ export class ChipSetResolver {
   ) { }
 
   @Query((returns) => ChipSetEntityModel)
-  async chipSet(@Args('opaque_id', { type: () => String }) opaqueId: UUID) {
+  async chipSet(
+    @Args('opaque_id', { type: () => String })
+    opaqueId: UUID
+  ) {
     return this.chipSetService.chipSet(opaqueId)
   }
 
   @ResolveField()
-  async chips(@Parent() chipSet:ChipSetEntityModel){
+  async chips(@Parent() chipSet: ChipSetEntityModel) {
     return this.chipService.chipsForChipSet(chipSet.opaqueId)
   }
 }

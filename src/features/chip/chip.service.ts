@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { ChipEntityModel } from "./chip.entityModel";
 import { Repository } from "typeorm";
-import { ChipSetEntityModel } from "../chipSet/chipSet.entityModel";
 import { UUID } from "crypto";
+
+import { ChipSetEntityModel } from "@/features/chipSet/chipSet.entityModel";
+
+import { ChipEntityModel } from "./chip.entityModel";
 
 @Injectable()
 export class ChipService {
@@ -16,13 +18,17 @@ export class ChipService {
   ) { }
 
   async allChips() {
-    return this.chipRepository.find()
+    return this.chipRepository.find({
+      relations: {
+        chipSet: true
+      }
+    })
   }
 
   async chipsForChipSet(opaqueId: UUID) {
     const chipSet = await this.chipSetRepository.findOne({
       relations: {
-        chips: true
+        chips: { chipSet: true },
       },
       where: {
         opaqueId
