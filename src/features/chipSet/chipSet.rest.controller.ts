@@ -11,14 +11,14 @@ export class ChipSetController {
     private em: EntityManager,
   ) { }
 
-  @Post('create')
-  async create(@Body() createChipSetDto: CreateChipSetDto) {
-    const { name } = createChipSetDto
+  // @Post('create')
+  // async create(@Body() createChipSetDto: CreateChipSetDto) {
+  //   const { name } = createChipSetDto
 
-    return this.em.save(
-      new ChipSetEntityModel(name, [])
-    )
-  }
+  //   return this.em.save(
+  //     new ChipSetEntityModel(name, [])
+  //   )
+  // }
 
   @Post('create/:name')
   async createWithName(@Param() param: any) {

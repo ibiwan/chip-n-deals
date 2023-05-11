@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import * as supertest from 'supertest';
+import * as _ from 'lodash';
 
 import { getTestRootModule } from './testing.module';
 import { SuperClient, TestChipsSetsData, createChipsAndSet } from './test.init.data';
@@ -11,7 +12,7 @@ const getTestApp = async () => {
   return testApp;
 }
 
-describe("Chips'n'Sets graphql (e2e)", () => {
+describe("Chips graphql (e2e)", () => {
   let app: INestApplication;
   let httpClient: SuperClient;
   let testChipSetsData: TestChipsSetsData;
@@ -24,11 +25,9 @@ describe("Chips'n'Sets graphql (e2e)", () => {
   afterAll(async () => { await app.close() })
 
   it('gets allChips', async () => {
-    const expectedChips = testChipSetsData.testChips.map(chip => {
-      // omit chip.id, set.id, set.chips
-      const { color, value, chipSet: { name, opaqueId } } = chip
-      return { color, value, chipSet: { name, opaqueId } }
-    })
+    const expectedChips = testChipSetsData.testChips.map(chip =>
+      _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips'])
+    )
 
     const result = await httpClient.post('/graphql').send({ query: getAllChips })
     const fetchedChips: ChipEntityModel[] = result.body.data.allChips
@@ -41,12 +40,10 @@ describe("Chips'n'Sets graphql (e2e)", () => {
     const { opaqueId } = testChipSet;
     const expectedChips = testChipSetsData.testChips
       .filter(chip => chip.chipSet == testChipSet)
-      .map(chip => {
-        // omit chip.id, set.id, set.chips
-        const { color, value, chipSet: { name, opaqueId } } = chip
-        return { color, value, chipSet: { name, opaqueId } }
-      })
-    
+      .map(chip =>
+        _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips'])
+      )
+
     const result = await httpClient.post('/graphql').send({
       query: getChipsForSet,
       variables: { chipset_opaque_id: opaqueId }

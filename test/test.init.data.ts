@@ -22,30 +22,36 @@ export type TestChipsSetsData = {
   testChipSets: ChipSetEntityModel[],
 }
 
+const createTestChips = async (httpClient: SuperClient) =>
+  Promise.all(testChipSets.map(async (testChipSet) => {
+    const createdSet = (await
+      httpClient
+        .post('/chipset/create/' + testChipSet.name)
+        .send()
+    ).body as ChipSetEntityModel;
+    testChipSet.opaqueId = createdSet.opaqueId
+    return createdSet
+  }))
+
+const createTestChipSets = async (httpClient: SuperClient) =>
+  Promise.all(testChips.map(async chip => {
+    const createdChip = (await
+      httpClient
+        .post('/chip/create')
+        .send({
+          ...chip,
+          chipSetOpaqueId: chip.chipSet.opaqueId
+        })
+    ).body as ChipEntityModel
+    chip.chipSet.chips.push(chip)
+  }))
+
 export const createChipsAndSet =
   async (httpClient: SuperClient):
     Promise<TestChipsSetsData> => {
-    await Promise.all(testChipSets.map(async (testChipSet) => {
-      const createdSet = (await
-        httpClient
-          .post('/chipset/create/' + testChipSet.name)
-          .send()
-      ).body as ChipSetEntityModel;
-      testChipSet.opaqueId = createdSet.opaqueId
-      return createdSet
-    }))
 
-    await Promise.all(testChips.map(async chip => {
-      const createdChip = (await
-        httpClient
-          .post('/chip/create')
-          .send({
-            ...chip,
-            chipSetOpaqueId: chip.chipSet.opaqueId
-          })
-      ).body as ChipEntityModel
-      chip.chipSet.chips.push(chip)
-    }))
+    await createTestChips(httpClient);
+    await createTestChipSets(httpClient);
 
     return { testChips, testChipSets }
   }

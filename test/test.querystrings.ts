@@ -23,3 +23,16 @@ query getChipsForChipSet($chipset_opaque_id:String!){
   }
 }
 `;
+
+export const getChipSet = `#graphql
+query getChipSet($opaque_id:String!){
+  chipSet(opaque_id:$opaque_id){
+    name
+    opaqueId
+    chips{
+      color
+      value
+    }
+  }
+}
+`;

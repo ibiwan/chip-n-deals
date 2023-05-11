@@ -10,17 +10,19 @@ import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 export const baseDbConfig: TypeOrmModuleOptions = {
   type: 'better-sqlite3',
   entities: [ChipEntityModel, ChipSetEntityModel],
-  // logging: true,
 }
 
 export const devDbConfig = {
-  ...baseDbConfig, database: "db.sqlite", synchronize: true
+  ...baseDbConfig, database: "db.sqlite",
+  synchronize: true
 }
 export const testDbConfig = {
-  ...baseDbConfig, database: ":memory:", synchronize: true
+  ...baseDbConfig, database: ":memory:",
+  synchronize: true
 }
 export const prodDbConfig = {
-  ...baseDbConfig, database: "prod.db.sqlite", synchronize: false
+  ...baseDbConfig, database: "prod.db.sqlite",
+  synchronize: false
 }
 
 @Module({

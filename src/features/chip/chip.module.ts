@@ -16,7 +16,10 @@ import { ChipSetModule } from '@/features/chipSet/chipSet.module';
       ChipSetEntityModel,
     ])
   ],
-  providers: [ChipResolver, ChipService],
+  providers: [
+    ChipResolver,
+    ChipService,
+  ],
   exports: [ChipService],
 })
 export class ChipModule { }

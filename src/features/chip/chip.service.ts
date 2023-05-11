@@ -1,11 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { UUID } from "crypto";
 
 import { ChipSetEntityModel } from "@/features/chipSet/chipSet.entityModel";
 
-import { ChipEntityModel } from "./chip.entityModel";
+import { ChipEntityModel, CreateChipDto } from "./chip.entityModel";
+import { ChipSetService } from "../chipSet/chipSet.service";
 
 @Injectable()
 export class ChipService {
@@ -15,6 +16,11 @@ export class ChipService {
 
     @InjectRepository(ChipSetEntityModel)
     private chipSetRepository: Repository<ChipSetEntityModel>,
+
+    private chipSetService: ChipSetService,
+
+    @InjectEntityManager()
+    private em: EntityManager,
   ) { }
 
   async allChips() {
@@ -36,5 +42,19 @@ export class ChipService {
     })
 
     return chipSet.chips
+  }
+
+  async createChip(createChipDto: CreateChipDto) {
+    const { color, value, chipSetOpaqueId } = createChipDto
+
+    const chipSet = await this.chipSetService.chipSet(chipSetOpaqueId)
+
+    const chip = new ChipEntityModel()
+    chip.color = color;
+    chip.value = value
+    chip.chipSet = chipSet;
+    this.em.save(chip)
+
+    return chip
   }
 }
