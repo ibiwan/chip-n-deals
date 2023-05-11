@@ -10,7 +10,8 @@ import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 
 @Module({
   imports: [
-    forwardRef(() => ChipSetModule),
+    // forwardRef accommodates circular references
+    forwardRef(() => ChipSetModule), 
     TypeOrmModule.forFeature([
       ChipEntityModel,
       ChipSetEntityModel,
@@ -20,6 +21,8 @@ import { ChipSetModule } from '@/features/chipSet/chipSet.module';
     ChipResolver,
     ChipService,
   ],
-  exports: [ChipService],
+  exports: [
+    ChipService
+  ],
 })
 export class ChipModule { }

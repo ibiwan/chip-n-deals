@@ -49,10 +49,9 @@ export class ChipService {
 
     const chipSet = await this.chipSetService.chipSet(chipSetOpaqueId)
 
-    const chip = new ChipEntityModel()
-    chip.color = color;
-    chip.value = value
-    chip.chipSet = chipSet;
+    const chip = new ChipEntityModel(
+      color, value, chipSet
+    )
     this.em.save(chip)
 
     return chip

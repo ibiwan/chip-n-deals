@@ -9,6 +9,8 @@ import { Field, ObjectType } from '@nestjs/graphql';
 
 import { ChipEntityModel } from '@/features/chip/chip.entityModel';
 
+// combine graphql object type, domain model, 
+// and database entity def in one class using attributes
 @Entity('chip_set')
 @ObjectType('ChipSet')
 export class ChipSetEntityModel {
@@ -34,11 +36,16 @@ export class ChipSetEntityModel {
   @Field()
   name: string;
 
-  @OneToMany((type) => ChipEntityModel, (chip) => chip.chipSet, { cascade: true })
+  @OneToMany(
+    (type) => ChipEntityModel,
+    (chip) => chip.chipSet,
+    { cascade: true }
+  )
   @Field((type) => [ChipEntityModel])
   chips: ChipEntityModel[];
 }
 
+// "create" object has to differ slightly but is closely related to combined type
 export class CreateChipSetDto {
   name: string;
 }

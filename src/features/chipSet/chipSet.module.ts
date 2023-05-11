@@ -11,6 +11,7 @@ import { ChipSetService } from './chipSet.service';
 
 @Module({
   imports: [
+    // forwardRef accommodates circular references
     forwardRef(() => ChipModule),
     TypeOrmModule.forFeature([
       ChipEntityModel,
