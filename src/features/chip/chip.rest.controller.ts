@@ -9,6 +9,6 @@ export class ChipController {
 
   @Post('create')
   async create(@Body() createChipDto: CreateChipDto): Promise<ChipEntityModel> {
-    return this.chipService.createChip(createChipDto);
+    return this.chipService.create(createChipDto);
   }
 }

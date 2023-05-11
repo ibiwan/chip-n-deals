@@ -2,14 +2,19 @@ import { INestApplication } from '@nestjs/common';
 import * as supertest from 'supertest';
 import * as _ from 'lodash';
 
-import { getTestRootModule } from './testing.module';
+import { ChipEntityModel, CreateChipDto } from '@/features/chip/chip.entityModel';
+import { getTestRootModule } from '@test/helpers/testing.module';
 import {
   SuperClient,
   TestChipsSetsData,
   createChipsAndSet,
-} from './test.init.data';
-import { getAllChips, getChipsForSet } from './test.querystrings';
-import { ChipEntityModel } from '@/features/chip/chip.entityModel';
+  testChip,
+} from '@test/fixtures/test.init.data';
+import {
+  createChip,
+  getAllChips,
+  getChipsForSet,
+} from '@test/querystrings/test.chip.querystrings';
 
 const getTestApp = async () => {
   const testApp = (await getTestRootModule()).createNestApplication();
@@ -70,4 +75,29 @@ describe('Chips graphql (e2e)', () => {
 
     expect(fetchedChips).toEqual(expectedChips);
   });
+
+  it('creates new chip for chipSet', async () => {
+    const testChipSet = testChipSetsData.testChipSets[0];
+    const { name, opaqueId } = testChipSet;
+
+    const expectedChip = {
+      ...testChip,
+      chipSet: testChipSet
+    }
+
+    const inputChip: CreateChipDto = {
+      ...testChip,
+      chipSetOpaqueId: opaqueId,
+    }
+    const result = await httpClient.post('/graphql').send({
+      query: createChip,
+      variables: { chipData: inputChip },
+    })
+    const createdChip: ChipEntityModel[] = result?.body?.data?.createChip;
+    if (!createdChip) {
+      console.log(result.text);
+    }
+
+    expect(createdChip).toEqual(expectedChip);
+  })
 });

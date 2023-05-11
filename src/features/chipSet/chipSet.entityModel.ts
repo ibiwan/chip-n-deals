@@ -10,7 +10,7 @@ import { Field, InputType, ObjectType } from '@nestjs/graphql';
 
 import {
   ChipEntityModel,
-  CreateChipDto,
+  CreateOrphanChipDto,
 } from '@/features/chip/chip.entityModel';
 
 // combine graphql object type, domain model,
@@ -39,19 +39,19 @@ export class ChipSetEntityModel {
   name: string;
 
   @OneToMany((type) => ChipEntityModel, (chip) => chip.chipSet, {
-    cascade: true,
+    cascade: ["insert", "update"],
   })
   @Field((type) => [ChipEntityModel])
   chips: ChipEntityModel[];
 }
 
-@InputType()
+@InputType('ChipSetInput')
 export class CreateChipSetDto {
   @Field()
   name: string;
 
-  @Field((type) => [CreateChipDto])
-  chips: CreateChipDto[];
+  @Field((type) => [CreateOrphanChipDto])
+  chips: CreateOrphanChipDto[];
 }
 
 export type ChipSetRepository = Repository<ChipSetEntityModel>;

@@ -16,6 +16,7 @@ export const devDbConfig = {
   ...baseDbConfig,
   database: 'db.sqlite',
   synchronize: true,
+  debugger: true
 };
 export const testDbConfig = {
   ...baseDbConfig,
@@ -32,4 +33,4 @@ export const prodDbConfig = {
   imports: [TypeOrmModule.forRoot(devDbConfig), ChipModule, ChipSetModule],
   exports: [],
 })
-export class DatasourceModule {}
+export class DatasourceModule { }

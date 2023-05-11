@@ -18,7 +18,7 @@ export class ChipSetResolver {
   constructor(
     private chipService: ChipService,
     private chipSetService: ChipSetService,
-  ) {}
+  ) { }
 
   @Query((returns) => ChipSetEntityModel)
   async chipSet(

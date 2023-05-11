@@ -1,7 +1,7 @@
 import * as supertest from 'supertest';
 
-import { ChipEntityModel } from '@/features/chip/chip.entityModel';
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
+import { ChipEntityModel, CreateChipDto } from '@/features/chip/chip.entityModel';
+import { ChipSetEntityModel, CreateChipSetDto } from '@/features/chipSet/chipSet.entityModel';
 
 const testChipSetNames = ['testChipSet1', 'testChipSet2'];
 const testChipSets = testChipSetNames.map(
@@ -14,6 +14,19 @@ const testChips: ChipEntityModel[] = [
   { id: 7, color: 'puce', value: 1, chipSet: testChipSets[0] },
   { id: 87, color: 'ruschia', value: 100, chipSet: testChipSets[1] },
 ];
+
+export const testChipSet: CreateChipSetDto = {
+  name: 'a set',
+  chips: [
+    { color: 'orange', value: 2 },
+    { color: 'lime', value: 3 },
+  ]
+}
+
+export const testChip: CreateChipDto = {
+  color: 'taupe',
+  value: 314159
+}
 
 export type SuperClient = supertest.SuperTest<supertest.Test>;
 

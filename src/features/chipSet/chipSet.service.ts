@@ -22,7 +22,7 @@ export class ChipSetService {
     // forwardRef accommodates circular references
     @Inject(forwardRef(() => ChipService))
     private chipService: ChipService,
-  ) {}
+  ) { }
 
   async chipSet(opaqueId: UUID): Promise<ChipSetEntityModel> {
     return this.chipSetRepository.findOne({
@@ -38,10 +38,16 @@ export class ChipSetService {
   async create(data: CreateChipSetDto): Promise<ChipSetEntityModel> {
     const { name, chips: chipsData } = data;
     const chipSet = new ChipSetEntityModel(name, []);
-    await Promise.all(
-      chipsData.map((chipData) => this.chipService.createChip(chipData)),
-    );
 
-    return this.em.save(chipSet);
+    const chips = await Promise.all(
+      chipsData.map((chipData) =>
+        this.chipService.createFor(chipData, chipSet)
+      ),
+    );
+    chipSet.chips = chips
+
+    await this.em.save(chipSet)
+
+    return chipSet;
   }
 }

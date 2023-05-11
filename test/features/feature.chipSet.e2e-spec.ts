@@ -2,14 +2,19 @@ import { INestApplication } from '@nestjs/common';
 import * as supertest from 'supertest';
 import * as _ from 'lodash';
 
-import { getTestRootModule } from './testing.module';
+import { getTestRootModule } from '@test/helpers/testing.module';
 import {
   SuperClient,
   TestChipsSetsData,
   createChipsAndSet,
-} from './test.init.data';
-import { getChipSet } from './test.querystrings';
+  testChipSet,
+} from '@test/fixtures/test.init.data';
+import {
+  createChipSet,
+  getChipSet,
+} from '../querystrings/test.chipset.querystrings';
 import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
+
 
 const getTestApp = async () => {
   const testApp = (await getTestRootModule()).createNestApplication();
@@ -57,4 +62,22 @@ describe('ChipSets graphql (e2e)', () => {
 
     expect(fetchedChipSet).toEqual(expectedChipSet);
   });
+
+  it('creates a chipSet', async () => {
+    const result = await httpClient.post('/graphql')
+      .send({
+        query: createChipSet,
+        variables: { chipSetData: testChipSet }
+      })
+
+    const createdChipSet: ChipSetEntityModel = result?.body?.data?.createChipSet;
+    if (!createdChipSet) {
+      console.log(result.text);
+    }
+
+    expect(createdChipSet.opaqueId).not.toBeNull;
+
+    const anonCreatedChipSet = _.omit(createdChipSet, 'opaqueId')
+    expect(anonCreatedChipSet).toEqual(testChipSet)
+  })
 });

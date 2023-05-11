@@ -7,8 +7,10 @@ import {
   ChipEntityModel,
   ChipRepository,
   CreateChipDto,
+  CreateOrphanChipDto,
 } from './chip.entityModel';
 import { ChipSetService } from '../chipSet/chipSet.service';
+import { ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
 
 @Injectable()
 export class ChipService {
@@ -22,7 +24,7 @@ export class ChipService {
 
     @InjectEntityManager()
     private em: EntityManager,
-  ) {}
+  ) { }
 
   async allChips(): Promise<ChipEntityModel[]> {
     return this.chipRepository.find({
@@ -38,13 +40,22 @@ export class ChipService {
     return chipSet.chips;
   }
 
-  async createChip(createChipDto: CreateChipDto): Promise<ChipEntityModel> {
-    const { color, value, chipSetOpaqueId } = createChipDto;
+  async createFor(
+    createChipDto: CreateOrphanChipDto,
+    chipSet: ChipSetEntityModel,
+  ): Promise<ChipEntityModel> {
+    const { color, value } = createChipDto;
+    const chip = new ChipEntityModel(color, value, chipSet);
 
+    return chip;
+  }
+
+  async create(createChipDto: CreateChipDto): Promise<ChipEntityModel> {
+    const { color, value, chipSetOpaqueId } = createChipDto;
     const chipSet = await this.chipSetService.chipSet(chipSetOpaqueId);
 
     const chip = new ChipEntityModel(color, value, chipSet);
-    this.em.save(chip);
+    await this.em.save(chip);
 
     return chip;
   }

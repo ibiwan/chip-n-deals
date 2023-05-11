@@ -12,7 +12,7 @@
   },
   "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/src/$1",
-    "^@Helper/(.*)$": "<rootDir>/src/common/helper/$1"
+    "^@test/(.*)$": "<rootDir>/test/$1"
   },
   "collectCoverageFrom": [
     "./src/**/*.(t|j)s"

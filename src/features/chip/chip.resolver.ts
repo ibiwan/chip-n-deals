@@ -1,13 +1,13 @@
-import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { UUID } from 'crypto';
 
-import { ChipEntityModel } from './chip.entityModel';
+import { ChipEntityModel, CreateChipDto } from './chip.entityModel';
 import { ChipService } from './chip.service';
 import { ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
 
 @Resolver((of) => ChipEntityModel)
 export class ChipResolver {
-  constructor(private chipService: ChipService) {}
+  constructor(private chipService: ChipService) { }
 
   @Query((returns) => [ChipEntityModel])
   async allChips(): Promise<ChipEntityModel[]> {
@@ -26,4 +26,18 @@ export class ChipResolver {
   async chipSet(@Parent() chip: ChipEntityModel): Promise<ChipSetEntityModel> {
     return chip.chipSet;
   }
+
+  @Mutation((returns) => ChipEntityModel)
+  async createChip(
+    @Args({
+      name: 'chipData',
+      type: () => CreateChipDto,
+    })
+    chipData: CreateChipDto,
+  ): Promise<ChipEntityModel> {
+    return this.chipService.create(chipData);
+  }
+
+
+
 }

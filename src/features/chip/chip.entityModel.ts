@@ -39,21 +39,28 @@ export class ChipEntityModel {
   @Field()
   value: number;
 
-  @ManyToOne((type) => ChipSetEntityModel, (chipSet) => chipSet.chips)
+  @ManyToOne(
+    (type) => ChipSetEntityModel,
+    (chipSet) => chipSet.chips,
+    { cascade: ["insert", "update"] },
+  )
   @Field((type) => ChipSetEntityModel)
   chipSet: ChipSetEntityModel;
 }
 
 @InputType()
-export class CreateChipDto {
+export class CreateOrphanChipDto {
   @Field()
   color: string;
 
   @Field()
   value: number;
+}
 
+@InputType('ChipInput')
+export class CreateChipDto extends CreateOrphanChipDto {
   @Field((type) => String)
-  chipSetOpaqueId: UUID;
+  chipSetOpaqueId?: UUID;
 }
 
 export type ChipRepository = Repository<ChipEntityModel>;
