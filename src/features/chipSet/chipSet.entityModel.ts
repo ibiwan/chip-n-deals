@@ -4,28 +4,30 @@ import {
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
+  Repository,
 } from 'typeorm';
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
 
-import { ChipEntityModel } from '@/features/chip/chip.entityModel';
+import {
+  ChipEntityModel,
+  CreateChipDto,
+} from '@/features/chip/chip.entityModel';
 
-// combine graphql object type, domain model, 
+// combine graphql object type, domain model,
 // and database entity def in one class using attributes
 @Entity('chip_set')
 @ObjectType('ChipSet')
 export class ChipSetEntityModel {
-  constructor(
-    name: string,
-    chips: ChipEntityModel[] = null
-  ) {
-    this.name = name
+  constructor(name: string, chips: ChipEntityModel[] = null) {
+    this.name = name;
     if (chips) {
-      this.chips = chips
+      this.chips = chips;
     }
-    this.opaqueId = randomUUID()
+    this.opaqueId = randomUUID();
   }
 
   @PrimaryGeneratedColumn()
+  // exclude from graphql type
   id?: number;
 
   @Column()
@@ -36,16 +38,20 @@ export class ChipSetEntityModel {
   @Field()
   name: string;
 
-  @OneToMany(
-    (type) => ChipEntityModel,
-    (chip) => chip.chipSet,
-    { cascade: true }
-  )
+  @OneToMany((type) => ChipEntityModel, (chip) => chip.chipSet, {
+    cascade: true,
+  })
   @Field((type) => [ChipEntityModel])
   chips: ChipEntityModel[];
 }
 
-// "create" object has to differ slightly but is closely related to combined type
+@InputType()
 export class CreateChipSetDto {
+  @Field()
   name: string;
+
+  @Field((type) => [CreateChipDto])
+  chips: CreateChipDto[];
 }
+
+export type ChipSetRepository = Repository<ChipSetEntityModel>;

@@ -15,11 +15,11 @@ describe('AppModule', () => {
 
     expect(module).toBeDefined();
 
-    expect(module.get(ChipService))
-    expect(module.get(ChipSetService))
-    expect(module.get(ChipResolver))
-    expect(module.get(ChipSetResolver))
-    expect(module.get(ChipController))
-    expect(module.get(ChipSetController))
+    expect(module.get(ChipService));
+    expect(module.get(ChipSetService));
+    expect(module.get(ChipResolver));
+    expect(module.get(ChipSetResolver));
+    expect(module.get(ChipController));
+    expect(module.get(ChipSetController));
   });
 });

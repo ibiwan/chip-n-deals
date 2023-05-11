@@ -13,14 +13,8 @@ import { ChipSetModule } from '@/features/chipSet/chipSet.module';
   imports: [
     ChipModule,
     ChipSetModule,
-    TypeOrmModule.forFeature([
-      ChipEntityModel,
-      ChipSetEntityModel,
-    ]),
+    TypeOrmModule.forFeature([ChipEntityModel, ChipSetEntityModel]),
   ],
-  controllers: [
-    ChipSetController,
-    ChipController
-  ],
+  controllers: [ChipSetController, ChipController],
 })
-export class ControllerModule { }
+export class ControllerModule {}

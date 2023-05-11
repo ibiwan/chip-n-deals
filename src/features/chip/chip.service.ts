@@ -1,59 +1,51 @@
-import { Injectable } from "@nestjs/common";
-import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
-import { EntityManager, Repository } from "typeorm";
-import { UUID } from "crypto";
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { UUID } from 'crypto';
 
-import { ChipSetEntityModel } from "@/features/chipSet/chipSet.entityModel";
-
-import { ChipEntityModel, CreateChipDto } from "./chip.entityModel";
-import { ChipSetService } from "../chipSet/chipSet.service";
+import {
+  ChipEntityModel,
+  ChipRepository,
+  CreateChipDto,
+} from './chip.entityModel';
+import { ChipSetService } from '../chipSet/chipSet.service';
 
 @Injectable()
 export class ChipService {
   constructor(
     @InjectRepository(ChipEntityModel)
-    private chipRepository: Repository<ChipEntityModel>,
+    private chipRepository: ChipRepository,
 
-    @InjectRepository(ChipSetEntityModel)
-    private chipSetRepository: Repository<ChipSetEntityModel>,
-
+    // forwardRef accommodates circular references
+    @Inject(forwardRef(() => ChipSetService))
     private chipSetService: ChipSetService,
 
     @InjectEntityManager()
     private em: EntityManager,
-  ) { }
+  ) {}
 
-  async allChips() {
+  async allChips(): Promise<ChipEntityModel[]> {
     return this.chipRepository.find({
       relations: {
-        chipSet: true
-      }
-    })
-  }
-
-  async chipsForChipSet(opaqueId: UUID) {
-    const chipSet = await this.chipSetRepository.findOne({
-      relations: {
-        chips: { chipSet: true },
+        chipSet: true,
       },
-      where: {
-        opaqueId
-      }
-    })
-
-    return chipSet.chips
+    });
   }
 
-  async createChip(createChipDto: CreateChipDto) {
-    const { color, value, chipSetOpaqueId } = createChipDto
+  async chipsForChipSet(opaqueId: UUID): Promise<ChipEntityModel[]> {
+    const chipSet = await this.chipSetService.chipSet(opaqueId);
 
-    const chipSet = await this.chipSetService.chipSet(chipSetOpaqueId)
+    return chipSet.chips;
+  }
 
-    const chip = new ChipEntityModel(
-      color, value, chipSet
-    )
-    this.em.save(chip)
+  async createChip(createChipDto: CreateChipDto): Promise<ChipEntityModel> {
+    const { color, value, chipSetOpaqueId } = createChipDto;
 
-    return chip
+    const chipSet = await this.chipSetService.chipSet(chipSetOpaqueId);
+
+    const chip = new ChipEntityModel(color, value, chipSet);
+    this.em.save(chip);
+
+    return chip;
   }
 }

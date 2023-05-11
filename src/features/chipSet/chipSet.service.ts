@@ -1,27 +1,47 @@
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { UUID } from 'crypto';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager } from 'typeorm';
 
-import { ChipSetEntityModel } from './chipSet.entityModel';
+import {
+  ChipSetEntityModel,
+  ChipSetRepository,
+  CreateChipSetDto,
+} from './chipSet.entityModel';
+import { ChipService } from '../chip/chip.service';
 
 @Injectable()
 export class ChipSetService {
   constructor(
     @InjectRepository(ChipSetEntityModel)
-    private chipSetRepository: Repository<ChipSetEntityModel>,
+    private chipSetRepository: ChipSetRepository,
 
     @InjectEntityManager()
     private em: EntityManager,
-  ) { }
 
-  async chipSet(opaqueId: UUID) {
-    return this.chipSetRepository.findOneBy({ opaqueId })
+    // forwardRef accommodates circular references
+    @Inject(forwardRef(() => ChipService))
+    private chipService: ChipService,
+  ) {}
+
+  async chipSet(opaqueId: UUID): Promise<ChipSetEntityModel> {
+    return this.chipSetRepository.findOne({
+      relations: { chips: { chipSet: true } },
+      where: { opaqueId },
+    });
   }
 
-  async createWithName(name:string){
-    return this.em.save(
-      new ChipSetEntityModel(name, [])
-    )
+  async createWithName(name: string): Promise<ChipSetEntityModel> {
+    return this.em.save(new ChipSetEntityModel(name, []));
+  }
+
+  async create(data: CreateChipSetDto): Promise<ChipSetEntityModel> {
+    const { name, chips: chipsData } = data;
+    const chipSet = new ChipSetEntityModel(name, []);
+    await Promise.all(
+      chipsData.map((chipData) => this.chipService.createChip(chipData)),
+    );
+
+    return this.em.save(chipSet);
   }
 }

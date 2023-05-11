@@ -13,16 +13,10 @@ import { ChipSetService } from './chipSet.service';
   imports: [
     // forwardRef accommodates circular references
     forwardRef(() => ChipModule),
-    TypeOrmModule.forFeature([
-      ChipEntityModel,
-      ChipSetEntityModel,
-    ]),
+    TypeOrmModule.forFeature([ChipEntityModel, ChipSetEntityModel]),
   ],
   controllers: [ChipSetController],
-  providers: [
-    ChipSetResolver,
-    ChipSetService,
-  ],
-  exports: [ChipSetService]
+  providers: [ChipSetResolver, ChipSetService],
+  exports: [ChipSetService],
 })
-export class ChipSetModule { }
+export class ChipSetModule {}

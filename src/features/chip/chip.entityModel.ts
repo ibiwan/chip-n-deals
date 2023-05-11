@@ -2,13 +2,14 @@ import {
   Column,
   Entity,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
+  Repository,
 } from 'typeorm';
 import { ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { UUID } from 'crypto';
 
-// combine graphql object type, domain model, 
+// combine graphql object type, domain model,
 // and database entity def in one class using attributes
 @Entity('chip')
 @ObjectType('Chip')
@@ -16,37 +17,43 @@ export class ChipEntityModel {
   constructor(
     color: string,
     value: number,
-    chipSet: ChipSetEntityModel
+    chipSet: ChipSetEntityModel = null,
   ) {
-    this.color = color
-    this.value = value
+    this.color = color;
+    this.value = value;
+
     if (chipSet) {
-      this.chipSet = chipSet
+      this.chipSet = chipSet;
     }
   }
 
   @PrimaryGeneratedColumn()
+  // exclude from graphql type
   id: number;
 
   @Column()
-  @Field((type) => String)
+  @Field()
   color: string;
 
   @Column()
   @Field()
   value: number;
 
-  @ManyToOne(
-    (type) => ChipSetEntityModel,
-    (chipSet) => chipSet.chips
-  )
+  @ManyToOne((type) => ChipSetEntityModel, (chipSet) => chipSet.chips)
   @Field((type) => ChipSetEntityModel)
   chipSet: ChipSetEntityModel;
 }
 
-// "create" object has to differ slightly but is closely related to combined type
+@InputType()
 export class CreateChipDto {
+  @Field()
   color: string;
+
+  @Field()
   value: number;
+
+  @Field((type) => String)
   chipSetOpaqueId: UUID;
 }
+
+export type ChipRepository = Repository<ChipEntityModel>;
