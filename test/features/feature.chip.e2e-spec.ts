@@ -2,19 +2,29 @@ import { INestApplication } from '@nestjs/common';
 import * as supertest from 'supertest';
 import * as _ from 'lodash';
 
-import { ChipEntityModel, CreateChipDto } from '@/features/chip/chip.entityModel';
-import { getTestRootModule } from '@test/helpers/testing.module';
 import {
-  SuperClient,
-  TestChipsSetsData,
-  createChipsAndSet,
-  testChip,
-} from '@test/fixtures/test.init.data';
+  ChipEntityModel,
+  CreateChipDto,
+} from '@/features/chip/chip.entityModel';
+import { getTestRootModule } from '@test/helpers/testing.module';
 import {
   createChip,
   getAllChips,
   getChipsForSet,
 } from '@test/querystrings/test.chip.querystrings';
+import {
+  SuperClient,
+  gqlChipFromDbEntity,
+  createChipDtoFromDbRow,
+  gqlChipFromChipDto,
+} from '@test/helpers/types';
+import { persistToDb } from '@test/helpers/test.database.utils';
+import {
+  testChipDbRows,
+  testChipEMs,
+  testChipSetDbRows,
+  testChipSetEMs,
+} from '@test/fixtures/test.init.data';
 
 const getTestApp = async () => {
   const testApp = (await getTestRootModule()).createNestApplication();
@@ -24,23 +34,23 @@ const getTestApp = async () => {
 describe('Chips graphql (e2e)', () => {
   let app: INestApplication;
   let httpClient: SuperClient;
-  let testChipSetsData: TestChipsSetsData;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     app = await getTestApp();
     await app.init();
+    await persistToDb(app, ...testChipSetEMs); // will cascade to chips
+
     httpClient = supertest(app.getHttpServer());
-    testChipSetsData = await createChipsAndSet(httpClient);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     if (app) {
       await app.close();
     }
   });
 
   it('gets allChips', async () => {
-    const expectedChips = testChipSetsData.testChips.map((chip) =>
+    const expectedChips = testChipEMs.map((chip) =>
       _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips']),
     );
 
@@ -49,19 +59,16 @@ describe('Chips graphql (e2e)', () => {
       .send({ query: getAllChips });
 
     const fetchedChips: ChipEntityModel[] = result?.body?.data?.allChips;
-    if (!fetchedChips) {
-      console.log(result.text);
-    }
 
     expect(fetchedChips).toEqual(expectedChips);
   });
 
   it('gets chipsForChipSet', async () => {
-    const testChipSet = testChipSetsData.testChipSets[0];
+    const testChipSet = testChipSetDbRows[0];
     const { opaqueId } = testChipSet;
-    const expectedChips = testChipSetsData.testChips
+    const expectedChips = testChipEMs
       .filter((chip) => chip.chipSet == testChipSet)
-      .map((chip) => _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips']));
+      .map((chip) => gqlChipFromDbEntity(chip));
 
     const result = await httpClient.post('/graphql').send({
       query: getChipsForSet,
@@ -77,27 +84,30 @@ describe('Chips graphql (e2e)', () => {
   });
 
   it('creates new chip for chipSet', async () => {
-    const testChipSet = testChipSetsData.testChipSets[0];
-    const { name, opaqueId } = testChipSet;
+    const testChipDto: CreateChipDto = createChipDtoFromDbRow(
+      testChipDbRows[0],
+    );
+    const testChipSetEM = testChipSetEMs[0];
 
-    const expectedChip = {
-      ...testChip,
-      chipSet: testChipSet
-    }
+    const { opaqueId } = testChipSetEM;
+
+    const expectedChip = gqlChipFromChipDto(testChipDto, testChipSetEM);
 
     const inputChip: CreateChipDto = {
-      ...testChip,
+      ...testChipDto,
       chipSetOpaqueId: opaqueId,
-    }
+    };
+
     const result = await httpClient.post('/graphql').send({
       query: createChip,
       variables: { chipData: inputChip },
-    })
+    });
+
     const createdChip: ChipEntityModel[] = result?.body?.data?.createChip;
     if (!createdChip) {
       console.log(result.text);
     }
 
     expect(createdChip).toEqual(expectedChip);
-  })
+  });
 });

@@ -13,14 +13,19 @@ import { ChipService } from '@/features/chip/chip.service';
 import { ChipSetEntityModel, CreateChipSetDto } from './chipSet.entityModel';
 import { ChipSetService } from './chipSet.service';
 
-@Resolver((of) => ChipSetEntityModel)
+@Resolver(() => ChipSetEntityModel)
 export class ChipSetResolver {
   constructor(
     private chipService: ChipService,
     private chipSetService: ChipSetService,
-  ) { }
+  ) {}
 
-  @Query((returns) => ChipSetEntityModel)
+  @Query(() => [ChipSetEntityModel])
+  async allChipSets(): Promise<ChipSetEntityModel[]> {
+    return this.chipSetService.allChipSets();
+  }
+
+  @Query(() => ChipSetEntityModel)
   async chipSet(
     @Args('opaque_id', { type: () => String })
     opaqueId: UUID,
@@ -33,7 +38,7 @@ export class ChipSetResolver {
     return this.chipService.chipsForChipSet(chipSet.opaqueId);
   }
 
-  @Mutation((returns) => ChipSetEntityModel)
+  @Mutation(() => ChipSetEntityModel)
   async createChipSet(
     @Args({
       name: 'chipSetData',

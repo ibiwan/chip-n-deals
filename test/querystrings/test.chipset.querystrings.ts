@@ -1,3 +1,16 @@
+export const getAllChipSets = `#graphql
+{
+  allChipSets{
+  name
+    opaqueId
+    chips {
+      color
+      value
+    }
+  }
+}
+`;
+
 export const getChipSet = `#graphql
 query getChipSet($opaque_id:String!){
   chipSet(opaque_id:$opaque_id){
@@ -22,4 +35,4 @@ mutation CreateChipSet ($chipSetData:ChipSetInput!){
     }
   }
 }
-`
+`;

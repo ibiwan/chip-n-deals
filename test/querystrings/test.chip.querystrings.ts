@@ -35,4 +35,4 @@ mutation CreateChip ($chipData:ChipInput!){
     }
   }
 }
-`
+`;

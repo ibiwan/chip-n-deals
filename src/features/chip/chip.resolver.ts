@@ -1,20 +1,33 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { UUID } from 'crypto';
 
 import { ChipEntityModel, CreateChipDto } from './chip.entityModel';
 import { ChipService } from './chip.service';
-import { ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
+import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 
-@Resolver((of) => ChipEntityModel)
+@Resolver(
+  /* istanbul ignore next */
+  () => ChipEntityModel,
+)
 export class ChipResolver {
-  constructor(private chipService: ChipService) { }
+  constructor(private chipService: ChipService) {}
 
-  @Query((returns) => [ChipEntityModel])
+  @Query(
+    /* istanbul ignore next */
+    () => [ChipEntityModel],
+  )
   async allChips(): Promise<ChipEntityModel[]> {
     return this.chipService.allChips();
   }
 
-  @Query((returns) => [ChipEntityModel])
+  @Query(() => [ChipEntityModel])
   async chipsForChipSet(
     @Args('chipset_opaque_id', { type: () => String })
     opaqueId: UUID,
@@ -27,7 +40,7 @@ export class ChipResolver {
     return chip.chipSet;
   }
 
-  @Mutation((returns) => ChipEntityModel)
+  @Mutation(() => ChipEntityModel)
   async createChip(
     @Args({
       name: 'chipData',
@@ -37,7 +50,4 @@ export class ChipResolver {
   ): Promise<ChipEntityModel> {
     return this.chipService.create(chipData);
   }
-
-
-
 }

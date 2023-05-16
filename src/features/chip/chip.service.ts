@@ -9,8 +9,9 @@ import {
   CreateChipDto,
   CreateOrphanChipDto,
 } from './chip.entityModel';
-import { ChipSetService } from '../chipSet/chipSet.service';
-import { ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
+
+import { ChipSetService } from '@/features/chipSet/chipSet.service';
+import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 
 @Injectable()
 export class ChipService {
@@ -19,12 +20,17 @@ export class ChipService {
     private chipRepository: ChipRepository,
 
     // forwardRef accommodates circular references
-    @Inject(forwardRef(() => ChipSetService))
+    @Inject(
+      forwardRef(
+        /* istanbul ignore next */
+        () => ChipSetService,
+      ),
+    )
     private chipSetService: ChipSetService,
 
     @InjectEntityManager()
     private em: EntityManager,
-  ) { }
+  ) {}
 
   async allChips(): Promise<ChipEntityModel[]> {
     return this.chipRepository.find({
@@ -40,7 +46,7 @@ export class ChipService {
     return chipSet.chips;
   }
 
-  async createFor(
+  async createChipModelForChipSetEntity(
     createChipDto: CreateOrphanChipDto,
     chipSet: ChipSetEntityModel,
   ): Promise<ChipEntityModel> {

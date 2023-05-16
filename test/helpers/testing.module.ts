@@ -1,5 +1,4 @@
 import { ChipsGraphqlModule } from '@/api/graphql.module';
-import { ControllerModule } from '@/api/rest.controller.module';
 import { ChipModule } from '@/features/chip/chip.module';
 import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -11,7 +10,6 @@ export const getTestRootModule = async (): Promise<TestingModule> => {
       ChipModule,
       ChipSetModule,
       ChipsGraphqlModule,
-      ControllerModule,
       TestDatasourceModule,
     ],
     providers: [],

@@ -5,9 +5,10 @@ import {
   PrimaryGeneratedColumn,
   Repository,
 } from 'typeorm';
-import { ChipSetEntityModel } from '../chipSet/chipSet.entityModel';
-import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { UUID } from 'crypto';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
+
+import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 
 // combine graphql object type, domain model,
 // and database entity def in one class using attributes
@@ -40,11 +41,18 @@ export class ChipEntityModel {
   value: number;
 
   @ManyToOne(
-    (type) => ChipSetEntityModel,
+    /* istanbul ignore next */
+    () => ChipSetEntityModel,
+    /* istanbul ignore next */
     (chipSet) => chipSet.chips,
-    { cascade: ["insert", "update"] },
+    {
+      cascade: ['insert', 'update'],
+    },
   )
-  @Field((type) => ChipSetEntityModel)
+  @Field(
+    /* istanbul ignore next */
+    () => ChipSetEntityModel,
+  )
   chipSet: ChipSetEntityModel;
 }
 
@@ -59,7 +67,10 @@ export class CreateOrphanChipDto {
 
 @InputType('ChipInput')
 export class CreateChipDto extends CreateOrphanChipDto {
-  @Field((type) => String)
+  @Field(
+    /* istanbul ignore next */
+    () => String,
+  )
   chipSetOpaqueId?: UUID;
 }
 
