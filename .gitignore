@@ -37,3 +37,6 @@ lerna-debug.log*
 
 # Local DB
 db.sqlite
+
+# Per-Install Configuration
+.env

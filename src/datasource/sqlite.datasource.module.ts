@@ -7,9 +7,12 @@ import { ChipModule } from '@/features/chip/chip.module';
 import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 
+import { PlayerEntityModel } from '@/features/player/player.entityModel';
+import { PlayerModule } from '@/features/player/player.module';
+
 export const baseDbConfig: TypeOrmModuleOptions = {
   type: 'better-sqlite3',
-  entities: [ChipEntityModel, ChipSetEntityModel],
+  entities: [ChipEntityModel, ChipSetEntityModel, PlayerEntityModel],
 };
 
 export const devDbConfig = {
@@ -30,7 +33,12 @@ export const prodDbConfig = {
 };
 
 @Module({
-  imports: [TypeOrmModule.forRoot(devDbConfig), ChipModule, ChipSetModule],
+  imports: [
+    TypeOrmModule.forRoot(devDbConfig),
+    ChipModule,
+    ChipSetModule,
+    PlayerModule,
+  ],
   exports: [],
 })
 export class DatasourceModule {}

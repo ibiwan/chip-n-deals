@@ -1,12 +1,12 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
+import { ChipSetModule } from '@/features/chipSet/chipSet.module';
+
 import { ChipResolver } from './chip.resolver';
 import { ChipEntityModel } from './chip.entityModel';
 import { ChipService } from './chip.service';
-
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
-import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 
 @Module({
   imports: [

@@ -8,13 +8,13 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
+import { UseInterceptors } from '@nestjs/common';
 
 import { ChipService } from '@/features/chip/chip.service';
+import { Owned, Ownership } from '@/auth/auth.guard';
 
 import { ChipSetEntityModel, CreateChipSetDto } from './chipSet.entityModel';
 import { ChipSetService } from './chipSet.service';
-import { ID_GETTER, Ownership } from '@/auth/auth.guard';
-import { SetMetadata, UseInterceptors } from '@nestjs/common';
 
 @UseInterceptors(Ownership)
 @Resolver(() => ChipSetEntityModel)
@@ -55,9 +55,13 @@ export class ChipSetResolver {
    * @method createChipSet GQL Mutation: create with chips
    */
   @Mutation(() => ChipSetEntityModel)
-  @SetMetadata(
-    ID_GETTER,
-    (data: { chipSetData: CreateChipSetDto }) => data.chipSetData.name,
+  // @SetMetadata(
+  //   ID_GETTER,
+  //   (data: { chipSetData: CreateChipSetDto }) => data.chipSetData.name,
+  // )
+  @Owned(
+    ({ chipSetData }) => chipSetData.name,
+    ({ chipSetData }) => chipSetData.name,
   )
   async createChipSet(
     @Args({

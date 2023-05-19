@@ -1,3 +1,5 @@
+import { UUID } from 'crypto';
+
 import {
   Args,
   Mutation,
@@ -6,11 +8,11 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { UUID } from 'crypto';
+
+import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 
 import { ChipEntityModel, CreateChipDto } from './chip.entityModel';
 import { ChipService } from './chip.service';
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 
 @Resolver(
   /* istanbul ignore next */

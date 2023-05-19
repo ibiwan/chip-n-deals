@@ -5,6 +5,7 @@ import {
   Injectable,
   NestInterceptor,
   UnauthorizedException,
+  applyDecorators,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SetMetadata } from '@nestjs/common';
@@ -18,10 +19,17 @@ import {
 import { Observable } from 'rxjs';
 
 export const IS_PUBLIC_KEY = Symbol();
-export const ID_GETTER = Symbol();
-export const OWNER_GETTER = Symbol();
+// export const ID_GETTER = Symbol();
+const OWNER_GETTER = Symbol();
+const PARENT_GETTER = Symbol();
 
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+export const Owned = (parentExtractor, ownerExtractor) =>
+  applyDecorators(
+    SetMetadata(PARENT_GETTER, parentExtractor),
+    SetMetadata(OWNER_GETTER, ownerExtractor),
+  );
 
 @Injectable()
 export class Ownership implements NestInterceptor {
@@ -31,12 +39,19 @@ export class Ownership implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Observable<any> | Promise<Observable<any>> {
-    const idGetter = this.reflector.get(ID_GETTER, context.getHandler());
+    // const idGetter = this.reflector.get(ID_GETTER, context.getHandler());
+    const parentGetter = this.reflector.get(
+      PARENT_GETTER,
+      context.getHandler(),
+    );
+    const ownerGetter = this.reflector.get(OWNER_GETTER, context.getHandler());
     const data = context.getArgByIndex(1);
-    if (idGetter && data) {
-      const id = idGetter(data);
-      console.log({ id });
-    }
+    // if (idGetter && data) {
+    //   const id = idGetter(data);
+    //   console.log({ id });
+    // }
+
+    // console.log({ parentGetter, ownerGetter, data });
 
     return next.handle();
   }
@@ -51,12 +66,14 @@ export class AuthGuard implements CanActivate {
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (this.isPublic(context)) {
+      // console.log('public');
       return true;
     }
 
     const request = extractRequestFromContext(context);
     const token = extractTokenFromRequestHeader(request);
     if (!token) {
+      // console.log('no token');
       throw new UnauthorizedException();
     }
 
@@ -78,6 +95,7 @@ export class AuthGuard implements CanActivate {
       });
       return payload;
     } catch {
+      console.log('bad token');
       throw new UnauthorizedException();
     }
   }

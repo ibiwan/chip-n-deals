@@ -1,17 +1,22 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+// world
 import { EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 
+// framework
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
+
+// other modules
+import { ChipSetService } from '@/features/chipSet/chipSet.service';
+import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
+
+// this module
 import {
   ChipEntityModel,
   ChipRepository,
   CreateChipDto,
   CreateOrphanChipDto,
 } from './chip.entityModel';
-
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
 
 @Injectable()
 export class ChipService {
