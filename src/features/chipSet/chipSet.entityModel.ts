@@ -39,30 +39,22 @@ export class ChipSetEntityModel {
   name: string;
 
   @OneToMany(
-    /* istanbul ignore next */
-    () => ChipEntityModel,
-    /* istanbul ignore next */
-    (chip) => chip.chipSet,
+    /* istanbul ignore next */ () => ChipEntityModel,
+    /* istanbul ignore next */ (chip) => chip.chipSet,
     {
       cascade: ['insert', 'update'],
     },
   )
-  @Field(
-    /* istanbul ignore next */
-    () => [ChipEntityModel],
-  )
+  @Field(/* istanbul ignore next */ () => [ChipEntityModel])
   chips: ChipEntityModel[];
 }
 
-@InputType('ChipSetInput')
+@InputType('CreateChipSetInput')
 export class CreateChipSetDto {
   @Field()
   name: string;
 
-  @Field(
-    /* istanbul ignore next */
-    () => [CreateOrphanChipDto],
-  )
+  @Field(/* istanbul ignore next */ () => [CreateOrphanChipDto])
   chips: CreateOrphanChipDto[];
 }
 

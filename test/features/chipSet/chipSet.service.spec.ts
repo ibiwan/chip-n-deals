@@ -97,7 +97,7 @@ describe('chipset service', () => {
       expect(createChipFn).toHaveBeenCalledTimes(createChipSetDto.chips.length);
 
       expect(emSaveFn).toHaveBeenCalledTimes(1);
-      expect(emSaveFn).toHaveBeenCalledWith(result)
+      expect(emSaveFn).toHaveBeenCalledWith(result);
     });
   });
 });

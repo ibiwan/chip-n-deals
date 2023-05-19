@@ -4,7 +4,12 @@ import { GraphQLModule } from '@nestjs/graphql';
 
 import { ChipModule } from '@/features/chip/chip.module';
 import { ChipSetModule } from '@/features/chipSet/chipSet.module';
+import { IncomingMessage, ServerResponse } from 'http';
 
+export interface GqlContextValue {
+  req: IncomingMessage;
+  res: ServerResponse;
+}
 const GqlFeatureModules = [ChipModule, ChipSetModule];
 
 @Module({
@@ -15,6 +20,9 @@ const GqlFeatureModules = [ChipModule, ChipSetModule];
       autoSchemaFile: true,
       include: [...GqlFeatureModules],
       path: 'graphql',
+      // context: ({ req, res }) => {
+      //   return { req, res };
+      // },
     }),
   ],
 })
