@@ -3,6 +3,8 @@ import { Column, Entity, PrimaryGeneratedColumn, Repository } from 'typeorm';
 
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
 
+import { SqlBool } from '@/datasource/sqlite.util';
+
 // combine graphql object type, domain model,
 // and database entity def in one class using attributes
 @Entity('player')
@@ -32,7 +34,7 @@ export class PlayerEntityModel {
 
   @Column()
   @Field()
-  isAdmin: boolean = false;
+  isAdmin: number = SqlBool.False;
 }
 
 @InputType('CreatePlayerInput')

@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 
+import { FeatureModule } from '@/features/features.module';
+
 import { ChipEntityModel } from '@/features/chip/chip.entityModel';
-import { ChipModule } from '@/features/chip/chip.module';
-
 import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
-import { ChipSetModule } from '@/features/chipSet/chipSet.module';
-
 import { PlayerEntityModel } from '@/features/player/player.entityModel';
-import { PlayerModule } from '@/features/player/player.module';
 
 export const baseDbConfig: TypeOrmModuleOptions = {
   type: 'better-sqlite3',
@@ -33,12 +30,7 @@ export const prodDbConfig = {
 };
 
 @Module({
-  imports: [
-    TypeOrmModule.forRoot(devDbConfig),
-    ChipModule,
-    ChipSetModule,
-    PlayerModule,
-  ],
+  imports: [TypeOrmModule.forRoot(devDbConfig), FeatureModule],
   exports: [],
 })
-export class DatasourceModule {}
+export class SqliteDatasourceModule {}

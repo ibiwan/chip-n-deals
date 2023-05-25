@@ -1,24 +1,23 @@
+import { IncomingMessage, ServerResponse } from 'http';
+
 import { Module } from '@nestjs/common';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 
-import { ChipModule } from '@/features/chip/chip.module';
-import { ChipSetModule } from '@/features/chipSet/chipSet.module';
-import { IncomingMessage, ServerResponse } from 'http';
+import { FeatureModule } from '@/features/features.module';
 
 export interface GqlContextValue {
   req: IncomingMessage;
   res: ServerResponse;
 }
-const GqlFeatureModules = [ChipModule, ChipSetModule];
 
 @Module({
   imports: [
-    ...GqlFeatureModules,
+    FeatureModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
-      include: [...GqlFeatureModules],
+      include: [FeatureModule],
       path: 'graphql',
       // context: ({ req, res }) => {
       //   return { req, res };
@@ -26,4 +25,4 @@ const GqlFeatureModules = [ChipModule, ChipSetModule];
     }),
   ],
 })
-export class ChipsGraphqlModule {}
+export class GraphqlApiModule {}

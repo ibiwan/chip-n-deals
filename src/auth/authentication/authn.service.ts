@@ -11,8 +11,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 import { Timer } from '@/util/timer.class';
+import { logger } from '@/util/logger';
 
-import { PlayerService } from '../features/player/player.service';
+import { PlayerService } from '@/features/player/player.service';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +22,11 @@ export class AuthService {
     private playerService: PlayerService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    this.jwtSecret = this.configService.get('JWT_SECRET');
+  }
+
+  private jwtSecret: string;
 
   async onApplicationBootstrap() {
     await this.createAdminUserIfNeeded();
@@ -55,7 +60,9 @@ export class AuthService {
     }
 
     const payload = { username: user.username, sub: user.opaqueId };
-    const token = await this.jwtService.signAsync(payload);
+    const token = await this.jwtService.signAsync(payload, {
+      secret: this.jwtSecret,
+    });
     const { exp: expiry } = jwt.decode(token, { json: true });
 
     return {
@@ -69,7 +76,8 @@ export class AuthService {
     const timer = Timer.start();
     const hash = bcrypt.hashSync(password, rounds);
     const msec = timer.finish().ms();
-    console.log(`hashing password, ${rounds} rounds, ${msec} ms`);
+    logger.info('hashing password', { rounds, msec });
+
     return hash;
   }
 
@@ -77,7 +85,8 @@ export class AuthService {
     const timer = Timer.start();
     const isMatch = bcrypt.compareSync(password, hash);
     const elapsed = timer.finish();
-    console.log(`validating password: ${elapsed.ms()} ms`);
+    logger.info('validating password', { msec: elapsed.ms() });
+
     return isMatch;
   }
 }

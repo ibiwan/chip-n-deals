@@ -1,11 +1,15 @@
-import { INestApplication } from '@nestjs/common';
 import * as supertest from 'supertest';
+import { UUID } from 'crypto';
 import * as _ from 'lodash';
+
+import { INestApplication } from '@nestjs/common';
 
 import {
   ChipEntityModel,
   CreateChipDto,
 } from '@/features/chip/chip.entityModel';
+import { logger } from '@/util/logger';
+
 import { getTestRootModule } from '@test/helpers/testing.module';
 import {
   createChip,
@@ -20,6 +24,8 @@ import {
 } from '@test/helpers/types';
 import { persistToDb } from '@test/helpers/test.database.utils';
 import {
+  testAdmin,
+  testAdminLP,
   testChipDbRows,
   testChipEMs,
   testChipSetDbRows,
@@ -34,13 +40,18 @@ const getTestApp = async () => {
 describe('Chips graphql (e2e)', () => {
   let app: INestApplication;
   let httpClient: SuperClient;
+  let access_token: string;
 
   beforeEach(async () => {
     app = await getTestApp();
     await app.init();
     await persistToDb(app, ...testChipSetEMs); // will cascade to chips
+    await persistToDb(app, testAdmin);
 
     httpClient = supertest(app.getHttpServer());
+
+    const loginResult = await httpClient.post('/auth/login').send(testAdminLP);
+    access_token = loginResult.body.access_token;
   });
 
   afterEach(async () => {
@@ -51,14 +62,18 @@ describe('Chips graphql (e2e)', () => {
 
   it('gets allChips', async () => {
     const expectedChips = testChipEMs.map((chip) =>
-      _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips']),
+      _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips', 'chipSetId']),
     );
 
     const result = await httpClient
       .post('/graphql')
+      .set('Authorization', `Bearer ${access_token}`)
       .send({ query: getAllChips });
 
     const fetchedChips: ChipEntityModel[] = result?.body?.data?.allChips;
+    if (!fetchedChips) {
+      logger.error('test response malformed', result.text);
+    }
 
     expect(fetchedChips).toEqual(expectedChips);
   });
@@ -70,14 +85,17 @@ describe('Chips graphql (e2e)', () => {
       .filter((chip) => chip.chipSet == testChipSet)
       .map((chip) => gqlChipFromDbEntity(chip));
 
-    const result = await httpClient.post('/graphql').send({
-      query: getChipsForSet,
-      variables: { chipset_opaque_id: opaqueId },
-    });
+    const result = await httpClient
+      .post('/graphql')
+      .set('Authorization', `Bearer ${access_token}`)
+      .send({
+        query: getChipsForSet,
+        variables: { chipset_opaque_id: opaqueId },
+      });
 
     const fetchedChips: ChipEntityModel[] = result?.body?.data?.chipsForChipSet;
     if (!fetchedChips) {
-      console.log(result.text);
+      logger.error('test response malformed', result.text);
     }
 
     expect(fetchedChips).toEqual(expectedChips);
@@ -98,15 +116,21 @@ describe('Chips graphql (e2e)', () => {
       chipSetOpaqueId: opaqueId,
     };
 
-    const result = await httpClient.post('/graphql').send({
-      query: createChip,
-      variables: { chipData: inputChip },
-    });
+    const result = await httpClient
+      .post('/graphql')
+      .set('Authorization', `Bearer ${access_token}`)
+      .send({
+        query: createChip,
+        variables: { chipData: inputChip },
+      });
 
-    const createdChip: ChipEntityModel[] = result?.body?.data?.createChip;
+    const createdChip: ChipEntityModel = result?.body?.data?.createChip;
     if (!createdChip) {
-      console.log(result.text);
+      logger.error('test response malformed', result.text);
     }
+
+    expect(createdChip.opaqueId).toBeInstanceOf<UUID>;
+    createdChip.opaqueId = null;
 
     expect(createdChip).toEqual(expectedChip);
   });

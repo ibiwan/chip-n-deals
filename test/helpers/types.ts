@@ -1,5 +1,5 @@
-import { UUID } from 'crypto';
 import * as supertest from 'supertest';
+import { UUID } from 'crypto';
 import * as _ from 'lodash';
 
 import {
@@ -43,7 +43,9 @@ export const gqlChipFromDbEntity = (
 export const createChipDtoFromDbRow = (chipDbRow: ChipDbRow): CreateChipDto => {
   const { color, value } = chipDbRow;
 
-  return new ChipEntityModel(color, value);
+  const chip = new ChipEntityModel(color, value);
+  delete chip.opaqueId;
+  return chip;
 };
 
 export const gqlChipFromChipDto = (
@@ -57,6 +59,7 @@ export const gqlChipFromChipDto = (
     chipDto.value,
     ...(chipSetEm ? [chipSetGqlModel] : []),
   );
+  chipGqlModel.opaqueId = null;
 
   return chipGqlModel;
 };
@@ -77,22 +80,7 @@ export const shallowGqlChipFromDbEntity = (
 ): ChipEntityModel => {
   const { color, value } = chipDbEntity;
   const chipShallowGqlModel = new ChipEntityModel(color, value);
+  chipShallowGqlModel.opaqueId = null;
 
   return chipShallowGqlModel;
 };
-
-// export const
-/**
-      const nonDbChipSet = _.omit(targetChipSet, 'id');
-
-
-    const expectedChipSet = {
-      ...nonDbChipSet,
-      chips: _.sortBy(targetChipSet.chips, 'id').map(
-        (chip) =>
-          _.omit(chip, ['id', 'chipSet']),
-      ),
-    };
-
-    const anonCreatedChipSet = _.omit(createdChipSet, 'opaqueId')
- */

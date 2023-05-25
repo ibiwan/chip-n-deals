@@ -1,3 +1,6 @@
+import { EntityManager } from 'typeorm';
+import { randomUUID } from 'crypto';
+
 import { ChipEntityModel } from '@/features/chip/chip.entityModel';
 import { ChipService } from '@/features/chip/chip.service';
 import {
@@ -5,9 +8,8 @@ import {
   ChipSetRepository,
 } from '@/features/chipSet/chipSet.entityModel';
 import { ChipSetService } from '@/features/chipSet/chipSet.service';
+
 import { testChipSetDtos, testChipSetEMs } from '@test/fixtures/test.init.data';
-import { randomUUID } from 'crypto';
-import { EntityManager } from 'typeorm';
 
 describe('chipset service', () => {
   describe('allChipSets', () => {
@@ -31,12 +33,7 @@ describe('chipset service', () => {
       expect(result).toBe(testChipSetEMs);
 
       expect(findFn).toHaveBeenCalledTimes(1);
-      expect(findFn).toHaveBeenCalledWith(
-        expect.objectContaining({ relations: expect.anything() }),
-      );
-      expect(findFn).toHaveBeenCalledWith(
-        expect.not.objectContaining({ where: expect.anything() }),
-      );
+      expect(findFn).toHaveBeenCalledWith();
     });
   });
 
@@ -50,7 +47,7 @@ describe('chipset service', () => {
       findOneFn = jest.fn().mockResolvedValue(findResult);
 
       const chipSetRepository: ChipSetRepository = {
-        findOne: findOneFn,
+        findOneBy: findOneFn,
       } as unknown as ChipSetRepository;
 
       chipSetService = new ChipSetService(chipSetRepository, null, null);
@@ -62,12 +59,7 @@ describe('chipset service', () => {
       expect(result).toBe(findResult);
 
       expect(findOneFn).toHaveBeenCalledTimes(1);
-      expect(findOneFn).toHaveBeenCalledWith(
-        expect.objectContaining({ relations: expect.anything() }),
-      );
-      expect(findOneFn).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { opaqueId: findParam } }),
-      );
+      expect(findOneFn).toHaveBeenCalledWith({ opaqueId: findParam });
     });
   });
 
@@ -92,7 +84,7 @@ describe('chipset service', () => {
     });
 
     it('uses chipset repo and returns created gql object', async () => {
-      const result = await chipSetService.create(createChipSetDto);
+      const result = await chipSetService.create(createChipSetDto, null);
 
       expect(createChipFn).toHaveBeenCalledTimes(createChipSetDto.chips.length);
 

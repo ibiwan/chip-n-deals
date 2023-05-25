@@ -1,5 +1,6 @@
-import { INestApplication } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
+
+import { INestApplication } from '@nestjs/common';
 
 export const clearDB = async (app: INestApplication) => {
   const em = app.get(EntityManager);
@@ -13,5 +14,5 @@ export const persistToDb = async (
   ...entities: any[]
 ) => {
   const em: EntityManager = app.get(EntityManager);
-  return await Promise.all(entities.map((entity) => em.save(entity)));
+  return Promise.all(entities.map((entity) => em.save(entity)));
 };

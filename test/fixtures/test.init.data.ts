@@ -1,3 +1,7 @@
+import * as bcrypt from 'bcrypt';
+import { UUID } from 'crypto';
+import * as _ from 'lodash';
+
 import {
   ChipEntityModel,
   CreateChipDto,
@@ -6,9 +10,9 @@ import {
   ChipSetEntityModel,
   CreateChipSetDto,
 } from '@/features/chipSet/chipSet.entityModel';
+import { PlayerEntityModel } from '@/features/player/player.entityModel';
+
 import { ChipDbRow, ChipSetDbRow } from '@test/helpers/types';
-import { UUID } from 'crypto';
-import * as _ from 'lodash';
 
 export const testChipSetDbRows: ChipSetDbRow[] = [
   { id: 4, name: 'vegas', opaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de' },
@@ -87,3 +91,7 @@ export const testChipSetDtos: CreateChipSetDto[] = testChipSetDbRows.map(
 export const testOrphanChipEMs = testChipDbRows.map(
   (row) => new ChipEntityModel(row.color, row.value),
 );
+
+export const testAdminLP = { username: 'admin', password: 'passify' };
+const testAdminPassHash = bcrypt.hashSync(testAdminLP.password, 2);
+export const testAdmin = new PlayerEntityModel('admin', testAdminPassHash);

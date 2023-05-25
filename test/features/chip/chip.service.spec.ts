@@ -1,15 +1,15 @@
 import { EntityManager, Repository } from 'typeorm';
+import { UUID } from 'crypto';
 
 import { ChipEntityModel } from '@/features/chip/chip.entityModel';
 import { ChipService } from '@/features/chip/chip.service';
+import { ChipSetService } from '@/features/chipSet/chipSet.service';
+
 import {
   testChipDtos,
   testChipSetEMs,
   testOrphanChipEMs,
 } from '@test/fixtures/test.init.data';
-import { UUID } from 'crypto';
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
 import {
   gqlChipFromChipDto,
   shallowGqlChipFromDbEntity,
@@ -38,12 +38,7 @@ describe('chip service', () => {
       const fetchedChips: ChipEntityModel[] = await chipService.allChips();
 
       expect(findFn).toBeCalledTimes(1);
-      expect(findFn).toBeCalledWith(
-        expect.objectContaining({ relations: expect.anything() }),
-      );
-      expect(findFn).toBeCalledWith(
-        expect.not.objectContaining({ where: expect.anything() }),
-      );
+      expect(findFn).toBeCalledWith();
 
       expect(fetchedChips).toStrictEqual(testOrphanChips);
     });
@@ -51,31 +46,32 @@ describe('chip service', () => {
 
   describe('chipsForChipSet', () => {
     let chipService: ChipService;
-    let chipSetFn: (opaqueId: UUID) => ChipSetEntityModel;
+    let findFn: (args: any) => ChipEntityModel[];
 
     const testChipSet = testChipSetEMs[0];
     const expectedChipResults = testChipSetEMs[0].chips;
 
     beforeEach(async () => {
-      chipSetFn = jest.fn().mockResolvedValue(testChipSet);
-      const chipSetService = {
-        chipSet: chipSetFn,
-      } as unknown as ChipSetService;
+      findFn = jest.fn().mockResolvedValue(expectedChipResults);
+
+      const chipRepo = {
+        findBy: findFn,
+      } as unknown as Repository<ChipEntityModel>;
 
       chipService = new ChipService(
-        null /*ChipRepo*/,
-        chipSetService,
+        chipRepo,
+        null /*ChipSetService*/,
         null /*EntityManager*/,
       );
     });
 
     it('uses chipSetService to search on id', async () => {
       const fetchedChips: ChipEntityModel[] = await chipService.chipsForChipSet(
-        testChipSet.opaqueId,
+        testChipSet.id,
       );
 
-      expect(chipSetFn).toBeCalledTimes(1);
-      expect(chipSetFn).toBeCalledWith(testChipSet.opaqueId);
+      expect(findFn).toBeCalledTimes(1);
+      expect(findFn).toBeCalledWith({ id: testChipSet.id });
 
       expect(fetchedChips).toEqual(expectedChipResults);
     });
@@ -102,13 +98,16 @@ describe('chip service', () => {
     it('fetches set, creates, associates, AND persists', async () => {
       const createdChip: ChipEntityModel = await chipService.create(
         testChipDto,
+        null,
       );
       expect(emSaveFn).toBeCalled();
 
       const createdShallow = shallowGqlChipFromDbEntity(createdChip);
       const expectedChip = gqlChipFromChipDto(testChipDto);
+
       expect(createdShallow).toEqual(expectedChip);
 
+      expect(createdChip.opaqueId).toBeInstanceOf<UUID>;
       expect(createdChip.chipSet).toBe(targetChipSet);
     });
   });
@@ -131,13 +130,16 @@ describe('chip service', () => {
         await chipService.createChipModelForChipSetEntity(
           testChipDto,
           targetChipSet,
+          null,
         );
       expect(emSaveFn).not.toBeCalled();
 
       const createdShallow = shallowGqlChipFromDbEntity(createdChip);
       const expectedChip = gqlChipFromChipDto(testChipDto);
+
       expect(createdShallow).toEqual(expectedChip);
 
+      expect(createdChip.opaqueId).toBeInstanceOf<UUID>;
       expect(createdChip.chipSet).toBe(targetChipSet);
     });
   });
