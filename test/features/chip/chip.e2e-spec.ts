@@ -7,8 +7,7 @@ import { INestApplication } from '@nestjs/common';
 import {
   ChipEntityModel,
   CreateChipDto,
-} from '@/features/chip/chip.entityModel';
-import { logger } from '@/util/logger';
+} from '@/features/chip/schema/chip.gql.model';
 
 import { getTestRootModule } from '@test/helpers/testing.module';
 import {
@@ -31,6 +30,7 @@ import {
   testChipSetDbRows,
   testChipSetEMs,
 } from '@test/fixtures/test.init.data';
+import { shortStack } from '@/util/logger.class';
 
 const getTestApp = async () => {
   const testApp = (await getTestRootModule()).createNestApplication();
@@ -45,8 +45,9 @@ describe('Chips graphql (e2e)', () => {
   beforeEach(async () => {
     app = await getTestApp();
     await app.init();
-    await persistToDb(app, ...testChipSetEMs); // will cascade to chips
     await persistToDb(app, testAdmin);
+    testChipSetEMs.map((set) => (set.owner = testAdmin));
+    await persistToDb(app, ...testChipSetEMs); // will cascade to chips
 
     httpClient = supertest(app.getHttpServer());
 
@@ -62,7 +63,16 @@ describe('Chips graphql (e2e)', () => {
 
   it('gets allChips', async () => {
     const expectedChips = testChipEMs.map((chip) =>
-      _.omit(chip, ['id', 'chipSet.id', 'chipSet.chips', 'chipSetId']),
+      _.omit(chip, [
+        'id',
+        'owner',
+        'ownerId',
+        'chipSet.id',
+        'chipSet.chips',
+        'chipSet.ownerId',
+        'chipSet.owner',
+        'chipSetId',
+      ]),
     );
 
     const result = await httpClient
@@ -72,7 +82,7 @@ describe('Chips graphql (e2e)', () => {
 
     const fetchedChips: ChipEntityModel[] = result?.body?.data?.allChips;
     if (!fetchedChips) {
-      logger.error('test response malformed', result.text);
+      console.log('test response malformed', result.text);
     }
 
     expect(fetchedChips).toEqual(expectedChips);
@@ -95,7 +105,7 @@ describe('Chips graphql (e2e)', () => {
 
     const fetchedChips: ChipEntityModel[] = result?.body?.data?.chipsForChipSet;
     if (!fetchedChips) {
-      logger.error('test response malformed', result.text);
+      console.log('test response malformed', result.text);
     }
 
     expect(fetchedChips).toEqual(expectedChips);
@@ -126,12 +136,13 @@ describe('Chips graphql (e2e)', () => {
 
     const createdChip: ChipEntityModel = result?.body?.data?.createChip;
     if (!createdChip) {
-      logger.error('test response malformed', result.text);
+      console.log('test response malformed', result.text);
     }
 
     expect(createdChip.opaqueId).toBeInstanceOf<UUID>;
     createdChip.opaqueId = null;
 
+    delete expectedChip.ownerId;
     expect(createdChip).toEqual(expectedChip);
   });
 });

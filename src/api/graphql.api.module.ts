@@ -5,6 +5,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 
 import { FeatureModule } from '@/features/features.module';
+import { GraphQLFormattedError } from 'graphql';
 
 export interface GqlContextValue {
   req: IncomingMessage;
@@ -22,6 +23,13 @@ export interface GqlContextValue {
       // context: ({ req, res }) => {
       //   return { req, res };
       // },
+      formatError: (
+        formattedError: GraphQLFormattedError,
+        error: unknown,
+      ): GraphQLFormattedError => {
+        console.log(`graphql error: ${JSON.stringify(formattedError)}`);
+        return formattedError;
+      },
     }),
   ],
 })

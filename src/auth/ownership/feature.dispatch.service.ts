@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 
 import { PlayerService } from '@/features/player/player.service';
 import { ChipService } from '@/features/chip/chip.service';
@@ -15,11 +15,17 @@ export class FeatureDispatchService {
     private chipSetService,
   ) {}
 
+  private readonly logger = new Logger(this.constructor.name);
+
   async dispatchFeatureService(
     serviceType: any,
     method: string,
     params: any[],
   ): Promise<any> {
+    this.logger.verbose(
+      `dispatchFeatureService, ${serviceType.name}.${method}`,
+    );
+
     if (serviceType === ChipService) {
       return this.chipService[method](...params);
     }

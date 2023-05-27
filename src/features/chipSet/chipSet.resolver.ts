@@ -11,43 +11,54 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { UseInterceptors } from '@nestjs/common';
+import { Logger, UseInterceptors } from '@nestjs/common';
 
-import { ChipService } from '@/features/chip/chip.service';
-import { Ownership, Owned } from '@/auth/authorization/authz.entity.guard';
-import { PlayerEntityModel } from '@/features/player/player.entityModel';
+import { EntityGuard, Owned } from '@/auth/authorization/authz.entity.guard';
+
 import { ChipsByChipSetIdLoader } from '@/features/chip/chip.dataLoader';
-import { ChipEntityModel } from '@/features/chip/chip.entityModel';
+import { Player } from '@/features/player/schema/player.domain.object';
 
-import { ChipSetEntityModel, CreateChipSetDto } from './chipSet.entityModel';
-import { ChipSetService } from './chipSet.service';
+import { CreateChipSetDto } from './schema/chipSet.gql.dto.create';
+import { ChipSetEntity } from './schema/chipSet.db.entity';
+import { PlayerDataLoader, PlayerLoader } from '../player/player.dataLoader';
+import { ChipSetModel } from './schema/chipSet.gql.model';
 import { ChipSetLoader } from './chipSet.dataLoader';
+import { ChipSetService } from './chipSet.service';
+import { ChipSet } from './schema/chipSet.domain.object';
+import { ChipDataLoader } from '@/features/chip/chip.dataLoader';
 
-@UseInterceptors(Ownership)
-@Resolver(() => ChipSetEntityModel)
+@UseInterceptors(EntityGuard)
+@Resolver(() => ChipSetModel)
 export class ChipSetResolver {
   constructor(
-    private chipService: ChipService,
-    private chipSetService: ChipSetService,
+    private chipSetService: ChipSetService, // private logger: Logger,
   ) {}
+  private readonly logger = new Logger(this.constructor.name);
 
   /**
    * @method allChipSets GQL Query: all, with chips
    */
-  @Query(() => [ChipSetEntityModel])
-  async allChipSets(): Promise<ChipSetEntityModel[]> {
-    return this.chipSetService.allChipSets();
+  @Query(() => [ChipSetModel])
+  async allChipSets(): Promise<ChipSetModel[]> {
+    this.logger.verbose(`allChipSets`);
+
+    const chipSets = (await this.chipSetService.allChipSets()).map((chipSet) =>
+      ChipSetModel.fromDomainObject(chipSet),
+    );
+    return chipSets;
   }
 
   /**
    * @method chipSet GQL Query: fetch one by opaqueId
    */
-  @Query(() => ChipSetEntityModel)
+  @Query(() => ChipSetModel)
   async chipSet(
     @Args('opaque_id', { type: () => String })
     opaqueId: UUID,
-  ): Promise<ChipSetEntityModel> {
-    return this.chipSetService.chipSet(opaqueId);
+  ): Promise<ChipSetModel> {
+    this.logger.verbose(`chipSet: opaqueId = ${opaqueId}`);
+    const chipSet = await this.chipSetService.chipSet(opaqueId);
+    return ChipSetModel.fromDomainObject(chipSet);
   }
 
   /**
@@ -55,26 +66,42 @@ export class ChipSetResolver {
    */
   @ResolveField()
   async chips(
-    @Parent() chipSet: ChipSetEntityModel,
+    @Parent() chipSet: ChipSet,
     @Loader(ChipsByChipSetIdLoader)
-    chipLoader: DataLoader<ChipEntityModel['id'], ChipEntityModel>,
+    chipLoader: ChipDataLoader,
   ) {
+    this.logger.verbose(`chips: chipSet.id = ${chipSet.id}`);
+
     return chipLoader.load(chipSet.id);
   }
 
-  @Query(() => [ChipEntityModel])
+  @ResolveField()
+  async owner(
+    @Parent() chipSet: ChipSet,
+    @Loader(PlayerLoader)
+    playerLoader: PlayerDataLoader,
+  ): Promise<Player> {
+    this.logger.verbose(`player: id = ${chipSet.owner.id}`);
+
+    const owner = await playerLoader.load(chipSet.owner.id);
+    return owner;
+  }
+
+  @Query(() => [ChipSetModel])
   async getChipSets(
     @Args({ name: 'ids', type: () => [Number] }) ids: number[],
     @Loader(ChipSetLoader)
-    chipSetLoader: DataLoader<ChipSetEntityModel['id'], ChipSetEntityModel>,
-  ): Promise<(Error | ChipSetEntityModel)[]> {
+    chipSetLoader: DataLoader<ChipSetEntity['id'], ChipSetModel>,
+  ): Promise<(Error | ChipSetModel)[]> {
+    this.logger.verbose(`getChipSets: ids = ${ids}`);
+
     return chipSetLoader.loadMany(ids);
   }
 
   /**
    * @method createChipSet GQL Mutation: create with chips
    */
-  @Mutation(() => ChipSetEntityModel)
+  @Mutation(() => ChipSetModel, { name: 'createChipSet' })
   @Owned({
     getTargetId: (data) => data.chipSetData.id,
     targetService: ChipSetService,
@@ -87,9 +114,15 @@ export class ChipSetResolver {
     chipSetData: CreateChipSetDto,
 
     @Context() context,
-  ): Promise<ChipSetEntityModel> {
-    const currentUser = context.req.user as PlayerEntityModel;
+  ): Promise<ChipSetModel> {
+    const currentUser = context.req.user as Player;
 
-    return this.chipSetService.create(chipSetData, currentUser);
+    this.logger.verbose(
+      `createChipSet: name = ${chipSetData.name}, current user = ${currentUser.id}: ${currentUser.username}`,
+    );
+
+    return ChipSetModel.fromDomainObject(
+      await this.chipSetService.create(chipSetData, currentUser),
+    );
   }
 }

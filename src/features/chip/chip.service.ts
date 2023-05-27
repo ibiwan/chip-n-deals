@@ -1,33 +1,29 @@
 // world
-import { Any, EntityManager, In } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { UUID } from 'crypto';
 
 // framework
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 
 // other modules
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
-import { PlayerEntityModel } from '@/features/player/player.entityModel';
 import { Ownable } from '@/auth/ownership/ownable.interface';
+import { shortStack } from '@/util/logger.class';
 import { ID } from '@/auth/auth.util';
-import { logger, shortStack } from '@/util/logger';
+
+import { ChipSet } from '@/features/chipSet/schema/chipSet.domain.object';
+import { ChipSetService } from '@/features/chipSet/chipSet.service';
 
 // this module
-import {
-  ChipEntityModel,
-  ChipRepository,
-  CreateChipDto,
-  CreateOrphanChipDto,
-} from './chip.entityModel';
+import { ChipEntity, ChipRepository } from './schema/chip.db.entity';
+import { Chip } from './schema/chip.domain.object';
+import { CreateChipDto } from './schema/chip.gql.dto.create';
+import { Player } from '../player/schema/player.domain.object';
 
 @Injectable()
-export class ChipService
-  implements Ownable<ChipEntityModel, ChipSetEntityModel>
-{
+export class ChipService implements Ownable<Chip, ChipSet> {
   constructor(
-    @InjectRepository(ChipEntityModel)
+    @InjectRepository(ChipEntity)
     private chipRepository: ChipRepository,
 
     // forwardRef accommodates circular references
@@ -38,103 +34,127 @@ export class ChipService
     private em: EntityManager,
   ) {}
 
-  async get(id: ID): Promise<ChipEntityModel> {
+  private readonly logger = new Logger(this.constructor.name);
+
+  async get(id: ID): Promise<Chip> {
+    this.logger.verbose(`get: id = ${id}`);
+
     if (Number.isInteger(id)) {
       return this.chipByDbId(id as number);
     }
     return this.chipByOpaqueId(id as UUID);
   }
 
-  async chipByDbId(id: number): Promise<ChipEntityModel> {
-    logger.trace('chip.service:this.chipRepository.findOneBy', {
-      id,
-      stack: shortStack(),
-    });
-    return this.chipRepository.findOneBy({ id });
+  async chipByDbId(id: number): Promise<Chip> {
+    this.logger.verbose(
+      `chipByDbId: chipRepository.findOneBy(${id})`,
+      shortStack(),
+    );
+    return (await this.chipRepository.findOneBy({ id })).toDomainObject();
   }
 
-  async chipByOpaqueId(opaqueId: UUID): Promise<ChipEntityModel> {
-    logger.trace('chip.service:this.chipRepository.findOneBy', {
-      opaqueId,
-      stack: shortStack(),
-    });
-    return this.chipRepository.findOneBy({ opaqueId });
+  async chipByOpaqueId(opaqueId: UUID): Promise<Chip> {
+    this.logger.verbose(
+      `chipByOpaqueId: chipRepository.findOneBy(${opaqueId})`,
+      shortStack(),
+    );
+    return (await this.chipRepository.findOneBy({ opaqueId })).toDomainObject();
   }
 
-  findByIds(
-    ids: readonly number[],
-  ): PromiseLike<ArrayLike<ChipEntityModel | Error>> {
-    logger.trace('chip.service:this.chipRepository.findBy', {
-      ids,
-      stack: shortStack(),
-    });
-    return this.chipRepository.findBy({ id: In(ids) });
+  async findByIds(ids: readonly number[]): Promise<(Chip | Error)[]> {
+    this.logger.verbose(
+      `findByIds: chipRepository.findBy([${ids.join(', ')}])`,
+      shortStack(),
+    );
+
+    return (await this.chipRepository.findBy({ id: In(ids) })).map(
+      (chipEntity) => chipEntity.toDomainObject(),
+    );
   }
 
-  async allChips(): Promise<ChipEntityModel[]> {
-    logger.trace('chip.service:this.chipRepository.find', {
-      param: null,
-      stack: shortStack(),
-    });
-    return this.chipRepository.find();
+  async allChips(): Promise<Chip[]> {
+    this.logger.verbose(`allChips: chipRepository.find()`, shortStack());
+
+    return (await this.chipRepository.find()).map((chipEntity) =>
+      chipEntity.toDomainObject(),
+    );
   }
 
-  async chipsForChipSet(id: number): Promise<ChipEntityModel[]> {
-    logger.trace('chip.service:this.chipRepository.findBy', {
-      id,
-      stack: shortStack(),
-    });
-    return this.chipRepository.findBy({ id });
+  async chipsForChipSet(id: number): Promise<Chip[]> {
+    this.logger.verbose(
+      `chipsForChipSet: chipRepository.findBy(${id})`,
+      shortStack(),
+    );
+
+    return (await this.chipRepository.findBy({ id })).map((chipEntity) =>
+      chipEntity.toDomainObject(),
+    );
   }
 
-  async chipsForChipSets(ids: readonly number[]): Promise<ChipEntityModel[]> {
-    logger.trace('chip.service:this.chipRepository.findBy', {
-      ids,
-      stack: shortStack(),
+  async chipsForChipSets(ids: readonly number[]): Promise<Chip[]> {
+    this.logger.verbose(
+      `chipsForChipSets: chipRepository.findBy([${ids.join(', ')}])`,
+      shortStack(),
+    );
+
+    const chipEntities = await this.chipRepository.findBy({
+      chipSetId: In(ids),
     });
-    return this.chipRepository.findBy({ chipSetId: In(ids) });
+    return chipEntities.map((chipEntity) => chipEntity.toDomainObject());
   }
 
-  async createChipModelForChipSetEntity(
-    createChipDto: CreateOrphanChipDto,
-    chipSet: ChipSetEntityModel,
-    owner: PlayerEntityModel,
-  ): Promise<ChipEntityModel> {
-    const { color, value } = createChipDto;
-    const chip = new ChipEntityModel(color, value, chipSet, owner);
+  async createChipForChipSet(
+    createChipDto: CreateChipDto,
+    chipSet: ChipSet,
+    owner: Player,
+  ): Promise<Chip> {
+    this.logger.verbose(
+      `createChipModelForChipSetEntity: color = ${
+        createChipDto.color
+      }, chipSet = ${chipSet?.id ?? chipSet?.name}, owner = ${owner.username}`,
+    );
+
+    const chip = createChipDto.toDomainObject(chipSet, owner);
 
     return chip;
   }
 
-  async create(
-    createChipDto: CreateChipDto,
-    owner: PlayerEntityModel,
-  ): Promise<ChipEntityModel> {
-    const { color, value, chipSetOpaqueId } = createChipDto;
+  async create(createChipDto: CreateChipDto, owner: Player): Promise<Chip> {
+    this.logger.verbose(
+      `create: color = ${createChipDto.color}, chipSet = ${createChipDto.chipSetOpaqueId}, owner = ${owner.username}`,
+    );
+
+    const { chipSetOpaqueId } = createChipDto;
     const chipSet = await this.chipSetService.chipSet(chipSetOpaqueId);
 
     if (!chipSet) {
       throw Error('specified chipSet does not exist');
     }
 
-    const chip = new ChipEntityModel(color, value, chipSet, owner);
-    await this.em.save(chip);
+    const chip = createChipDto.toDomainObject(chipSet, owner);
+    await this.em.save(ChipEntity.fromDomainObject(chip));
 
     return chip;
   }
 
-  async getParent(chip: ChipEntityModel) {
+  async getParent(chip: Chip) {
+    this.logger.verbose(`getParent`);
+
     return {
       item: chip.chipSet,
       serviceType: typeof ChipSetService,
     };
   }
 
-  getOwner(chip: ChipEntityModel): Promise<UUID> {
+  getOwner(chip: Chip): Promise<number> {
+    this.logger.verbose(`getOwner`);
+
     throw new Error('Method not implemented.');
   }
 
-  getAllOwners(chip: ChipEntityModel): Promise<UUID[]> {
+  getAllOwners(chip: Chip): Promise<(number | symbol)[]> {
+    this.logger.verbose(`getAllOwners`);
+
     throw new Error('Method not implemented.');
   }
 }

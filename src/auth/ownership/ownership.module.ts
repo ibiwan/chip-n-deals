@@ -1,7 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 
-import { Ownership } from '@/auth/authorization/authz.entity.guard';
+import { EntityGuard } from '@/auth/authorization/authz.entity.guard';
 
 import { ChipSetModule } from '@/features/chipSet/chipSet.module';
 import { PlayerModule } from '@/features/player/player.module';
@@ -23,7 +23,7 @@ import { AuthenticationModule } from '../authentication/authn.module';
     FeatureDispatchService,
     {
       provide: APP_INTERCEPTOR,
-      useClass: Ownership,
+      useClass: EntityGuard,
     },
   ],
   exports: [FeatureDispatchService],

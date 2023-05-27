@@ -1,23 +1,20 @@
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { UUID } from 'crypto';
 
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 
 import { AuthService } from '@/auth/authentication/authn.service';
-import { SqlBool } from '@/datasource/sqlite.util';
-import { logger, shortStack } from '@/util/logger';
 
-import {
-  CreatePlayerDto,
-  PlayerEntityModel,
-  PlayerRepository,
-} from './player.entityModel';
+import { shortStack } from '@/util/logger.class';
+import { PlayerEntity, PlayerRepository } from './schema/player.db.entity';
+import { Player } from './schema/player.domain.object';
+import { CreatePlayerDto } from './schema/player.gql.dto.create';
 
 @Injectable()
 export class PlayerService {
   constructor(
-    @InjectRepository(PlayerEntityModel)
+    @InjectRepository(PlayerEntity)
     private playerRepository: PlayerRepository,
 
     @InjectEntityManager()
@@ -27,39 +24,66 @@ export class PlayerService {
     private authService: AuthService,
   ) {}
 
-  async playerById(opaqueId: UUID): Promise<PlayerEntityModel> {
-    logger.trace('player.service:this.playerRepository.findOneBy', {
-      opaqueId,
-      stack: shortStack(),
-    });
-    return this.playerRepository.findOneBy({ opaqueId });
+  private readonly logger = new Logger(this.constructor.name);
+
+  async playerByOpaqueId(opaqueId: UUID): Promise<Player> {
+    this.logger.verbose(
+      `playerById: playerRepository.findOneBy(${opaqueId})`,
+      shortStack(),
+    );
+
+    return (
+      await this.playerRepository.findOneBy({ opaqueId })
+    ).toDomainObject();
   }
 
-  async playerByUsername(username: string): Promise<PlayerEntityModel> {
-    logger.trace('player.service:this.playerRepository.findOneBy', {
-      username,
-      stack: shortStack(),
-    });
+  async playerById(id: number): Promise<Player> {
+    this.logger.verbose(
+      `playerById: playerRepository.findOneBy(${id})`,
+      shortStack(),
+    );
 
-    return this.playerRepository.findOneBy({ username });
+    return (await this.playerRepository.findOneBy({ id })).toDomainObject();
   }
 
-  async create(createPlayerDto: CreatePlayerDto): Promise<PlayerEntityModel> {
+  async playersByIds(ids: readonly number[]): Promise<Player[]> {
+    this.logger.verbose(
+      `playerById: playerRepository.findBy(${ids})`,
+      shortStack(),
+    );
+
+    return (await this.playerRepository.findBy({ id: In(ids) })).map(
+      (playerEntity) => playerEntity.toDomainObject(),
+    );
+  }
+
+  async playerByUsername(username: string): Promise<Player> {
+    this.logger.verbose(
+      `playerByUsername: playerRepository.findOneBy(${username})`,
+      shortStack(),
+    );
+
+    const playerEntity = await this.playerRepository.findOneBy({ username });
+    return playerEntity.toDomainObject();
+  }
+
+  async create(createPlayerDto: CreatePlayerDto): Promise<Player> {
+    this.logger.verbose(`create: username = ${createPlayerDto.username}`);
+
     const { username, password } = createPlayerDto;
     const passhash = this.authService.hashPassword(password);
-    const player = new PlayerEntityModel(username, passhash);
-    await this.em.save(player);
+    const player = new Player(username, passhash);
+    await this.em.save(PlayerEntity.fromDomainObject(player));
 
     return player;
   }
 
-  async createAdmin(
-    adminName: string,
-    adminHash: string,
-  ): Promise<PlayerEntityModel> {
-    const player = new PlayerEntityModel(adminName, adminHash);
-    player.isAdmin = SqlBool.True;
-    await this.em.save(player);
+  async createAdmin(adminName: string, adminHash: string): Promise<Player> {
+    this.logger.verbose(`createAdmin: username = ${adminName}`);
+
+    const player = new Player(adminName, adminHash);
+    player.isAdmin = true;
+    await this.em.save(PlayerEntity.fromDomainObject(player));
 
     return player;
   }

@@ -12,7 +12,7 @@ import { AuthService } from './authn.service';
     ConfigModule,
     JwtModule.register({
       global: true,
-      signOptions: { expiresIn: '5m' },
+      signOptions: { expiresIn: '30s' },
     }),
     forwardRef(() => PlayerModule),
   ],

@@ -1,10 +1,8 @@
-import { UUID } from 'crypto';
-
-import { PlayerEntityModel } from '@/features/player/player.entityModel';
 import { ID } from '@/auth/auth.util';
+import { Player } from '@/features/player/schema/player.domain.object';
 
-export interface OwnableEntityModel {
-  owner: PlayerEntityModel;
+export interface OwnableObject {
+  owner: Player;
 }
 
 export type ItemRef<T> = {
@@ -13,11 +11,11 @@ export type ItemRef<T> = {
 };
 
 export interface Ownable<
-  TargetType extends OwnableEntityModel,
-  ParentType extends OwnableEntityModel,
+  TargetType extends OwnableObject,
+  ParentType extends OwnableObject,
 > {
   get(id: ID): Promise<TargetType>;
   getParent(item: TargetType): Promise<ItemRef<ParentType>>;
-  getOwner(item: TargetType): Promise<UUID>;
-  getAllOwners(item: TargetType): Promise<UUID[]>;
+  getOwner(item: TargetType): Promise<number>;
+  getAllOwners(item: TargetType): Promise<(number | symbol)[]>;
 }

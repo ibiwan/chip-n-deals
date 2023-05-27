@@ -3,24 +3,24 @@ import { UUID } from 'crypto';
 import * as _ from 'lodash';
 
 import {
+  ChipCore,
   ChipEntityModel,
   CreateChipDto,
-} from '@/features/chip/chip.entityModel';
-import { ChipSetEntityModel } from '@/features/chipSet/chipSet.entityModel';
+} from '@/features/chip/schema/chip.gql.model';
+import {
+  ChipSetCore,
+  ChipSetEntityModel,
+} from '@/features/chipSet/chipSet/chipSet.entityModel';
 
 export type SuperClient = supertest.SuperTest<supertest.Test>;
 
-export interface ChipDbRow {
+export interface ChipDbRow extends ChipCore {
   id: number;
+  opaqueId: UUID;
   color: string;
   value: number;
-  chipSetOpaqueId: UUID;
-}
-
-export interface ChipSetDbRow {
-  id: number;
-  name: string;
-  opaqueId: UUID;
+  chipSetId: number;
+  ownerId: number;
 }
 
 export const gqlChipFromDbEntity = (
@@ -43,8 +43,9 @@ export const gqlChipFromDbEntity = (
 export const createChipDtoFromDbRow = (chipDbRow: ChipDbRow): CreateChipDto => {
   const { color, value } = chipDbRow;
 
-  const chip = new ChipEntityModel(color, value);
-  delete chip.opaqueId;
+  const chip = new CreateChipDto();
+  chip.color = color;
+  chip.value = value;
   return chip;
 };
 
@@ -52,12 +53,12 @@ export const gqlChipFromChipDto = (
   chipDto: CreateChipDto,
   chipSetEm: ChipSetEntityModel = null,
 ): ChipEntityModel => {
-  const chipSetGqlModel = _.omit(chipSetEm, ['id']);
+  const chipSetGqlModel = _.omit(chipSetEm, ['id', 'owner', 'ownerId']);
 
   const chipGqlModel = new ChipEntityModel(
     chipDto.color,
     chipDto.value,
-    ...(chipSetEm ? [chipSetGqlModel] : []),
+    ...(chipSetEm ? [chipSetGqlModel as ChipSetEntityModel] : []),
   );
   chipGqlModel.opaqueId = null;
 

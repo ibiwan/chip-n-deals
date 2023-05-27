@@ -5,18 +5,28 @@ import * as _ from 'lodash';
 import {
   ChipEntityModel,
   CreateChipDto,
-} from '@/features/chip/chip.entityModel';
+} from '@/features/chip/schema/chip.gql.model';
 import {
   ChipSetEntityModel,
   CreateChipSetDto,
-} from '@/features/chipSet/chipSet.entityModel';
-import { PlayerEntityModel } from '@/features/player/player.entityModel';
+} from '@/features/chipSet/chipSet/chipSet.entityModel';
+import { PlayerEntityModel } from '@/features/player/schema/player.entityModel';
 
 import { ChipDbRow, ChipSetDbRow } from '@test/helpers/types';
 
 export const testChipSetDbRows: ChipSetDbRow[] = [
-  { id: 4, name: 'vegas', opaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de' },
-  { id: 7, name: 'atlantic', opaqueId: '53fdc649-d3d2-4847-8813-732fdc8217a9' },
+  {
+    id: 4,
+    name: 'vegas',
+    opaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    ownerId: 1,
+  },
+  {
+    id: 7,
+    name: 'atlantic',
+    opaqueId: '53fdc649-d3d2-4847-8813-732fdc8217a9',
+    ownerId: 1,
+  },
 ];
 
 export const testChipDbRows: ChipDbRow[] = [
@@ -25,24 +35,28 @@ export const testChipDbRows: ChipDbRow[] = [
     color: 'yed',
     value: 99,
     chipSetOpaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    ownerId: 1,
   },
   {
     id: 6,
     color: 'pinkle',
     value: 91,
     chipSetOpaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    ownerId: 1,
   },
   {
     id: 12,
     color: 'pucett',
     value: 1,
     chipSetOpaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    ownerId: 1,
   },
   {
     id: 87,
     color: 'ruschia',
     value: 100,
     chipSetOpaqueId: '53fdc649-d3d2-4847-8813-732fdc8217a9',
+    ownerId: 1,
   },
 ];
 
@@ -50,6 +64,8 @@ export const testChipSetEMs = testChipSetDbRows.map((row: ChipSetDbRow) => {
   const set = new ChipSetEntityModel(row.name, []);
   set.id = row.id;
   set.opaqueId = row.opaqueId;
+  set.ownerId = row.ownerId;
+
   return set;
 });
 
@@ -66,6 +82,7 @@ export const testChipEMs: ChipEntityModel[] = testChipDbRows.map((row) => {
     testChipSetEmLookup[row.chipSetOpaqueId],
   );
   chip.id = row.id;
+  chip.ownerId = row.ownerId;
   testChipSetEmLookup[row.chipSetOpaqueId].chips.push(chip);
   return chip;
 });

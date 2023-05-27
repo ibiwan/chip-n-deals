@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import {
   Inject,
   Injectable,
+  Logger,
   UnauthorizedException,
   forwardRef,
 } from '@nestjs/common';
@@ -11,7 +12,6 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 import { Timer } from '@/util/timer.class';
-import { logger } from '@/util/logger';
 
 import { PlayerService } from '@/features/player/player.service';
 
@@ -26,9 +26,12 @@ export class AuthService {
     this.jwtSecret = this.configService.get('JWT_SECRET');
   }
 
+  private readonly logger = new Logger(this.constructor.name);
+
   private jwtSecret: string;
 
   async onApplicationBootstrap() {
+    this.logger.debug('bootstrap');
     await this.createAdminUserIfNeeded();
   }
 
@@ -48,14 +51,20 @@ export class AuthService {
   }
 
   async signIn(username: string, pass: string): Promise<any> {
+    this.logger.debug(`signIn: username = ${username}`);
+
     const user = await this.playerService.playerByUsername(username);
 
     if (!user) {
+      this.logger.error(`authentication: no user with username = ${username}`);
       throw new UnauthorizedException();
     }
 
     const passValid = this.validatePassword(user.passhash, pass);
     if (!passValid) {
+      this.logger.error(
+        `authentication: incorrect password for user ${username}`,
+      );
       throw new UnauthorizedException();
     }
 
@@ -76,7 +85,7 @@ export class AuthService {
     const timer = Timer.start();
     const hash = bcrypt.hashSync(password, rounds);
     const msec = timer.finish().ms();
-    logger.info('hashing password', { rounds, msec });
+    this.logger.log(`hashing password: ${rounds} rounds, ${msec}ms`);
 
     return hash;
   }
@@ -84,8 +93,8 @@ export class AuthService {
   validatePassword(hash: string, password: string): boolean {
     const timer = Timer.start();
     const isMatch = bcrypt.compareSync(password, hash);
-    const elapsed = timer.finish();
-    logger.info('validating password', { msec: elapsed.ms() });
+    const msec = timer.finish().ms;
+    this.logger.log(`validating password, ${msec}ms`);
 
     return isMatch;
   }

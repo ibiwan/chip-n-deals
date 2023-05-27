@@ -6,18 +6,19 @@ import { AuthorizationModule } from '@/auth/authorization/authz.module';
 import { AuthenticationModule } from '@/auth/authentication/authn.module';
 
 import { PlayerService } from './player.service';
-import { PlayerEntityModel } from './player.entityModel';
+import { PlayerLoader } from './player.dataLoader';
+import { PlayerEntity } from './schema/player.db.entity';
 
 @Module({
   imports: [
     // forwardRef accommodates circular references
     forwardRef(/* istanbul ignore next */ () => AuthenticationModule),
     forwardRef(/* istanbul ignore next */ () => AuthorizationModule),
-    TypeOrmModule.forFeature([PlayerEntityModel]),
+    TypeOrmModule.forFeature([PlayerEntity]),
     ConfigModule,
   ],
 
-  providers: [PlayerService],
+  providers: [PlayerService, PlayerLoader],
   exports: [PlayerService],
 })
 export class PlayerModule {}

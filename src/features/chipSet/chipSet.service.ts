@@ -2,24 +2,23 @@ import { UUID } from 'crypto';
 import { EntityManager, In } from 'typeorm';
 
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 
 import { ChipService } from '@/features/chip/chip.service';
 import { Ownable } from '@/auth/ownership/ownable.interface';
-import { PlayerEntityModel } from '@/features/player/player.entityModel';
 import { ID } from '@/auth/auth.util';
-import { logger, shortStack } from '@/util/logger';
+import { shortStack } from '@/util/logger.class';
 
-import {
-  ChipSetEntityModel,
-  ChipSetRepository,
-  CreateChipSetDto,
-} from './chipSet.entityModel';
+import { Unowned } from '@/auth/authorization/authz.entity.guard';
+import { ChipSetEntity, ChipSetRepository } from './schema/chipSet.db.entity';
+import { ChipSet } from './schema/chipSet.domain.object';
+import { CreateChipSetDto } from './schema/chipSet.gql.dto.create';
+import { Player } from '../player/schema/player.domain.object';
 
 @Injectable()
-export class ChipSetService implements Ownable<ChipSetEntityModel, null> {
+export class ChipSetService implements Ownable<ChipSet, null> {
   constructor(
-    @InjectRepository(ChipSetEntityModel)
+    @InjectRepository(ChipSetEntity)
     private chipSetRepository: ChipSetRepository,
 
     @InjectEntityManager()
@@ -29,79 +28,105 @@ export class ChipSetService implements Ownable<ChipSetEntityModel, null> {
     @Inject(forwardRef(/* istanbul ignore next */ () => ChipService))
     private chipService: ChipService,
   ) {}
-  async get(id: ID): Promise<ChipSetEntityModel> {
+
+  private readonly logger = new Logger(this.constructor.name);
+
+  async get(id: ID): Promise<ChipSet> {
+    this.logger.verbose(`get: id = ${id}`);
+
     if (Number.isInteger(id)) {
       return this.chipSetById(id as number);
     }
     return this.chipSet(id as UUID);
   }
 
-  async allChipSets(): Promise<ChipSetEntityModel[]> {
-    logger.trace('chipSet.service:this.chipSetRepository.find', {
-      param: null,
-      stack: shortStack(),
-    });
-    return this.chipSetRepository.find();
-  }
+  async allChipSets(): Promise<ChipSet[]> {
+    this.logger.verbose(`allChipSets: chipSetRepository.find()`, shortStack());
 
-  async chipSet(opaqueId: UUID): Promise<ChipSetEntityModel> {
-    logger.trace('chipSet.service:this.chipSetRepository.findOneBy', {
-      opaqueId,
-      stack: shortStack(),
-    });
-    return this.chipSetRepository.findOneBy({ opaqueId });
-  }
-
-  async chipSetById(id: number): Promise<ChipSetEntityModel> {
-    logger.trace('chipSet.service:this.chipSetRepository.findOneBy', {
-      id,
-      stack: shortStack(),
-    });
-    return this.chipSetRepository.findOneBy({ id });
-  }
-
-  async chipSetsByIds(ids: readonly number[]): Promise<ChipSetEntityModel[]> {
-    logger.trace('chipSet.service:this.chipSetRepository.findBy', {
-      ids,
-      stack: shortStack(),
-    });
-    return this.chipSetRepository.findBy({ id: In(ids) });
-  }
-
-  async create(
-    data: CreateChipSetDto,
-    owner: PlayerEntityModel,
-  ): Promise<ChipSetEntityModel> {
-    const { name, chips: chipsData } = data;
-    const chipSet = new ChipSetEntityModel(name, [], owner);
-
-    const chips = await Promise.all(
-      chipsData.map((chipData) =>
-        this.chipService.createChipModelForChipSetEntity(
-          chipData,
-          chipSet,
-          owner,
-        ),
-      ),
+    return (await this.chipSetRepository.find()).map((chipSet) =>
+      chipSet.toDomainObject(),
     );
-    chipSet.chips = chips;
+  }
 
-    await this.em.save(chipSet);
+  async chipSet(opaqueId: UUID): Promise<ChipSet> {
+    this.logger.verbose(
+      `chipSet: chipSetRepository.findOneBy(${opaqueId})`,
+      shortStack(),
+    );
+
+    return (
+      await this.chipSetRepository.findOneBy({ opaqueId })
+    ).toDomainObject();
+  }
+
+  async chipSetById(id: number): Promise<ChipSet> {
+    this.logger.verbose(
+      `chipSetById: chipSetRepository.findOneBy(${id})`,
+      shortStack(),
+    );
+
+    return (await this.chipSetRepository.findOneBy({ id })).toDomainObject();
+  }
+
+  async chipSetsByIds(ids: readonly number[]): Promise<ChipSet[]> {
+    this.logger.verbose(
+      `chipSetsByIds: chipSetRepository.findBy([${ids.join(', ')}])`,
+      shortStack(),
+    );
+
+    return (await this.chipSetRepository.findBy({ id: In(ids) })).map(
+      (chipSet) => chipSet.toDomainObject(),
+    );
+  }
+
+  async chipSetsByOpaqueIds(ids: readonly UUID[]): Promise<ChipSet[]> {
+    this.logger.verbose(
+      `chipSetsByIds: chipSetRepository.findBy([${ids.join(', ')}])`,
+      shortStack(),
+    );
+
+    return (await this.chipSetRepository.findBy({ opaqueId: In(ids) })).map(
+      (chipSet) => chipSet.toDomainObject(),
+    );
+  }
+
+  async create(data: CreateChipSetDto, owner: Player): Promise<ChipSet> {
+    this.logger.verbose(
+      `create: name = ${data.name}, owner = ${owner.username}`,
+    );
+
+    const chipSet: ChipSet = data.toDomainObject(owner);
+    const chipSetEntity = ChipSetEntity.fromDomainObject(chipSet);
+
+    await this.em.save(chipSetEntity);
 
     return chipSet;
   }
 
-  async getParent(item: ChipSetEntityModel) {
+  async getParent(chipSet: ChipSet) {
+    this.logger.verbose(`getParent`);
+
     return null;
   }
 
-  async getOwner(chipSet: ChipSetEntityModel): Promise<UUID> {
-    return chipSet.owner.opaqueId;
+  async getOwner(chipSet: ChipSet): Promise<number> {
+    this.logger.verbose(`getOwner`);
+
+    return chipSet?.owner?.id;
   }
 
-  async getAllOwners(chipSet: ChipSetEntityModel): Promise<UUID[]> {
-    const parent = this.getParent(chipSet);
-    // const parentOwners =
-    return [];
+  async getAllOwners(chipSet: ChipSet): Promise<(number | symbol)[]> {
+    this.logger.verbose(`getAllOwners`);
+
+    const firstOwner = await this.getOwner(chipSet);
+    // const parent = (await this.getParent(chipSet)).id;
+
+    // when chipsets have parents, get their owners too
+    // console.log({ parent });
+
+    const parentOwners = [Unowned];
+    const allOwners = [firstOwner, ...parentOwners];
+    // console.log({ allOwners });
+    return allOwners;
   }
 }

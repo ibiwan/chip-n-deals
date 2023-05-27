@@ -7,7 +7,9 @@ export const getAllChips = `#graphql
     chipSet {
       name 
       opaqueId
+      owner {username}
     }
+    owner {username}
   }
 }
 `;
@@ -21,7 +23,9 @@ query GetChipsForChipSet($chipset_opaque_id:String!){
     chipSet {
       name
       opaqueId
+      owner {username}
     }
+    owner {username}
   }
 }
 `;
@@ -35,7 +39,9 @@ mutation CreateChip ($chipData:CreateChipInput!){
     chipSet{
       opaqueId
       name
+      owner {username}
     }
+    owner {username}
   }
 }
 `;

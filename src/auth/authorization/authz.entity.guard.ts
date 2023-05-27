@@ -5,7 +5,9 @@ import {
   ExecutionContext,
   Inject,
   Injectable,
+  Logger,
   NestInterceptor,
+  UnauthorizedException,
   applyDecorators,
   forwardRef,
 } from '@nestjs/common';
@@ -19,7 +21,10 @@ import {
   extractRequestFromContext,
 } from '@/auth/auth.util';
 import { Ownable } from '@/auth/ownership/ownable.interface';
-import { logger } from '@/util/logger';
+import { shortStack } from '@/util/logger.class';
+import { isNumber } from 'lodash';
+
+export const Unowned = Symbol('Unowned');
 
 class CreateForParent {
   getParentId?: (data: any) => ID;
@@ -38,23 +43,32 @@ export const Owned = (self: OwnershipSpecification) => {
 };
 
 @Injectable()
-export class Ownership implements NestInterceptor {
+export class EntityGuard implements NestInterceptor {
   constructor(
     private reflector: Reflector,
     @Inject(forwardRef(/* istanbul ignore next */ () => FeatureDispatchService))
     private featureDispatchService: FeatureDispatchService,
   ) {}
 
+  private readonly logger = new Logger(this.constructor.name);
+
   async intercept(
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Promise<Observable<any>> {
-    return next.handle();
+    this.logger.debug('intercept');
 
     const request = extractRequestFromContext(context);
 
+    this.logger.debug(`request method = ${request.method}`);
+
     const user = (request as any).user;
     const handler = context.getHandler();
+
+    this.logger.debug(
+      `intercept: user = ${user?.id}: ${user?.username}, handler = ${handler?.name}`,
+      shortStack(),
+    );
 
     try {
       const ownershipGetter: OwnershipSpecification = this.reflector.get(
@@ -62,29 +76,61 @@ export class Ownership implements NestInterceptor {
         handler,
       );
 
-      const data = context.getArgByIndex(1);
       const getId =
         (ownershipGetter as CreateForParent)?.getParentId ??
         (ownershipGetter as UpdateTarget)?.getTargetId;
+
+      const data = context.getArgByIndex(1);
       const id: ID = getId ? getId(data) : null;
+
       const serviceType =
         (ownershipGetter as CreateForParent)?.parentService ??
-        (ownershipGetter as UpdateTarget)?.targetService;
+        (ownershipGetter as UpdateTarget)?.targetService ??
+        null;
 
-      if (id && serviceType) {
+      if (id !== null && serviceType !== null) {
         const ownedLeaf =
           await this.featureDispatchService.dispatchFeatureService(
             serviceType,
             'get',
             [id],
           );
-      }
-    } catch (e) {
-      logger.error('Problem establishing ownership');
-      logger.debug(e);
-      // do not rethrow; continue without error while developing
-    }
 
-    return next.handle();
+        const owners = await this.featureDispatchService.dispatchFeatureService(
+          serviceType,
+          'getAllOwners',
+          [ownedLeaf],
+        );
+
+        try {
+          this.logger.verbose(
+            `item ${serviceType.name} with id ${id} has owners ${owners.map(
+              (a) => a.toString(),
+            )}`,
+          );
+          this.logger.verbose(
+            `ownership: callerId = ${user.id}, owners = [${owners
+              .filter((a) => a !== null && a !== undefined)
+              .map((id) => (Number.isInteger(id) ? id : id.toString()))
+              .join(',')}]`,
+          );
+        } catch (e) {}
+
+        if (!owners.includes(Unowned) && !owners.includes(user.id)) {
+          this.logger.error(`unauthorized access: user does not own target`);
+          throw new UnauthorizedException();
+        }
+      }
+
+      return next.handle();
+    } catch (e) {
+      if (e instanceof UnauthorizedException) {
+        throw e;
+      } else {
+        console.log(e);
+        this.logger.error('ownership decision error', e);
+        throw new UnauthorizedException();
+      }
+    }
   }
 }
