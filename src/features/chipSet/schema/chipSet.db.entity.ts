@@ -1,4 +1,4 @@
-import { UUID } from 'crypto';
+import { randomUUID, UUID } from 'crypto';
 import {
   Column,
   Entity,
@@ -28,15 +28,26 @@ export interface ChipSetDbRow extends ChipSetCore {
 @Entity('chip_set')
 export class ChipSetEntity implements ChipSetCore, DBEntity<ChipSet> {
   constructor(
-    opaqueId: UUID,
+    opaqueId: UUID = null,
     name: string,
     chips: ChipEntity[] = null,
     owner: PlayerEntity = null,
   ) {
-    this.opaqueId = opaqueId;
+    console.log('chipsetentity constructor', { owner });
+
+    this.opaqueId = opaqueId ?? randomUUID();
     this.name = name;
     this.chips = chips;
     this.owner = owner;
+    console.log({ owner, thisowner: this.owner });
+
+    if (this.owner) {
+      console.log('setting ownerid', this.owner.id);
+      this.ownerId = this.owner.id;
+      console.log('set', this.ownerId);
+    }
+
+    console.log('this', this);
   }
 
   @PrimaryGeneratedColumn() id?: number;
@@ -54,23 +65,40 @@ export class ChipSetEntity implements ChipSetCore, DBEntity<ChipSet> {
 
   @Column() ownerId: number;
 
-  static fromDomainObject(chipSet: ChipSet): ChipSetEntity {
-    return new ChipSetEntity(
+  static fromDomainObject(chipSet: ChipSet, isNested = false): ChipSetEntity {
+    const owner = PlayerEntity.fromDomainObject(chipSet.owner);
+    console.log({ owner });
+    const chipSetEntity: ChipSetEntity = new ChipSetEntity(
       chipSet.opaqueId,
       chipSet.name,
-      chipSet.chips.map((chip: Chip) => ChipEntity.fromDomainObject(chip)),
-      PlayerEntity.fromDomainObject(chipSet.owner),
+      null,
+      owner,
     );
+    console.log({ chipSet, chipSetEntity, isNested });
+    if (!isNested) {
+      chipSetEntity.chips = chipSet.chips.map((chip: Chip) => {
+        console.log({ chip });
+        return ChipEntity.fromDomainObject(chip, chipSetEntity);
+      });
+      console.log({ chipSetEntity });
+    }
+    return chipSetEntity;
   }
 
-  toDomainObject(): ChipSet {
-    return new ChipSet(
+  toDomainObject(isNested = false): ChipSet {
+    const chipSet: ChipSet = new ChipSet(
       this.name,
       this.id,
       this.opaqueId,
-      this.chips.map((chipEntity: ChipEntity) => chipEntity.toDomainObject()),
-      this.owner.toDomainObject(),
+      null,
+      this.owner?.toDomainObject(),
     );
+    if (!isNested) {
+      chipSet.chips = this.chips?.map((chipEntity: ChipEntity) =>
+        chipEntity.toDomainObject(chipSet),
+      );
+    }
+    return chipSet;
   }
 }
 

@@ -12,8 +12,12 @@ import { shortStack } from '@/util/logger.class';
 import { Unowned } from '@/auth/authorization/authz.entity.guard';
 import { ChipSetEntity, ChipSetRepository } from './schema/chipSet.db.entity';
 import { ChipSet } from './schema/chipSet.domain.object';
-import { CreateChipSetDto } from './schema/chipSet.gql.dto.create';
+import {
+  CreateChipSetDto,
+  chipSetCreateDtoToDomainObject,
+} from './schema/chipSet.gql.dto.create';
 import { Player } from '../player/schema/player.domain.object';
+import { ChipEntity } from '../chip/schema/chip.db.entity';
 
 @Injectable()
 export class ChipSetService implements Ownable<ChipSet, null> {
@@ -95,12 +99,28 @@ export class ChipSetService implements Ownable<ChipSet, null> {
       `create: name = ${data.name}, owner = ${owner.username}`,
     );
 
-    const chipSet: ChipSet = data.toDomainObject(owner);
+    // this.em.save(owner);
+
+    console.log('a', { data, owner });
+
+    const chipSet: ChipSet = chipSetCreateDtoToDomainObject(data, owner);
+
+    console.log('b', { chipSet });
+
     const chipSetEntity = ChipSetEntity.fromDomainObject(chipSet);
+    for (const chipEntity of chipSetEntity.chips) {
+      console.log({ chipEntity });
+      await this.em.save(chipEntity);
+      console.log('chip saved');
+    }
+    // chipSetEntity.ownerId = owner.id;
+    console.log('c', { chipSetEntity });
 
     await this.em.save(chipSetEntity);
 
-    return chipSet;
+    console.log('d, saved', { chipSetEntity });
+
+    return chipSetEntity.toDomainObject();
   }
 
   async getParent(chipSet: ChipSet) {

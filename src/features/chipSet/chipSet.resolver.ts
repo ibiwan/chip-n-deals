@@ -15,7 +15,11 @@ import { Logger, UseInterceptors } from '@nestjs/common';
 
 import { EntityGuard, Owned } from '@/auth/authorization/authz.entity.guard';
 
-import { ChipsByChipSetIdLoader } from '@/features/chip/chip.dataLoader';
+import {
+  ChipOpaqueDataLoader,
+  ChipsByChipSetIdLoader,
+  ChipsByChipSetOpaqueIdLoader,
+} from '@/features/chip/chip.dataLoader';
 import { Player } from '@/features/player/schema/player.domain.object';
 
 import { CreateChipSetDto } from './schema/chipSet.gql.dto.create';
@@ -66,13 +70,13 @@ export class ChipSetResolver {
    */
   @ResolveField()
   async chips(
-    @Parent() chipSet: ChipSet,
-    @Loader(ChipsByChipSetIdLoader)
-    chipLoader: ChipDataLoader,
+    @Parent() chipSet: ChipSetModel,
+    @Loader(ChipsByChipSetOpaqueIdLoader)
+    chipLoader: ChipOpaqueDataLoader,
   ) {
-    this.logger.verbose(`chips: chipSet.id = ${chipSet.id}`);
-
-    return chipLoader.load(chipSet.id);
+    this.logger.verbose(`chips: chipSet.id = ${chipSet.opaqueId}`);
+    console.log({ chipSet });
+    return chipLoader.load(chipSet.opaqueId);
   }
 
   @ResolveField()
@@ -115,14 +119,21 @@ export class ChipSetResolver {
 
     @Context() context,
   ): Promise<ChipSetModel> {
-    const currentUser = context.req.user as Player;
+    const currentUser: Player = context.req.user;
 
     this.logger.verbose(
       `createChipSet: name = ${chipSetData.name}, current user = ${currentUser.id}: ${currentUser.username}`,
     );
-
-    return ChipSetModel.fromDomainObject(
-      await this.chipSetService.create(chipSetData, currentUser),
+    console.log({ chipSetData });
+    const chipSet: ChipSet = await this.chipSetService.create(
+      chipSetData as CreateChipSetDto,
+      currentUser,
     );
+    console.log({ chipSet });
+    const chipSetModel: ChipSetModel = await ChipSetModel.fromDomainObject(
+      chipSet,
+    );
+    console.log({ chipSetModel });
+    return chipSetModel;
   }
 }

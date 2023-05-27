@@ -14,15 +14,15 @@ export class PlayerEntity implements PlayerCore, DBEntity<Player> {
     this.opaqueId = randomUUID();
   }
 
-  @PrimaryGeneratedColumn()
-  id?: number;
+  @PrimaryGeneratedColumn() id?: number;
   @Column() opaqueId?: UUID;
   @Column() username: string;
   @Column() passhash: string;
   @Column() isAdmin: number = SqlBool.False;
 
   static fromDomainObject(player: Player): PlayerEntity {
-    const playerEntity = new PlayerEntity(player.opaqueId, player.username);
+    const playerEntity = new PlayerEntity(player.username, player.passhash);
+    playerEntity.id = player.id;
     if (player.isAdmin) {
       playerEntity.isAdmin = SqlBool.True;
     }

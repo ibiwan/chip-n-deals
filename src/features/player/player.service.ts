@@ -62,9 +62,10 @@ export class PlayerService {
       `playerByUsername: playerRepository.findOneBy(${username})`,
       shortStack(),
     );
-
+    console.log({ username });
     const playerEntity = await this.playerRepository.findOneBy({ username });
-    return playerEntity.toDomainObject();
+    console.log({ playerEntity });
+    return playerEntity?.toDomainObject();
   }
 
   async create(createPlayerDto: CreatePlayerDto): Promise<Player> {
@@ -83,7 +84,10 @@ export class PlayerService {
 
     const player = new Player(adminName, adminHash);
     player.isAdmin = true;
-    await this.em.save(PlayerEntity.fromDomainObject(player));
+    console.log({ player });
+    const playerEntity = PlayerEntity.fromDomainObject(player);
+    console.log({ playerEntity });
+    await this.em.save(playerEntity);
 
     return player;
   }

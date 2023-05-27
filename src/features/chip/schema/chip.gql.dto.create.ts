@@ -18,8 +18,12 @@ export class CreateChipDto implements ChipCore {
     nullable: true,
   })
   chipSetOpaqueId?: UUID;
+}
 
-  toDomainObject(chipSet: ChipSet, owner: Player): Chip {
-    return new Chip(this.color, this.value, null, null, chipSet, owner);
-  }
+export function chipCreateDtoToDomainObject(
+  chipDto: CreateChipDto,
+  chipSet: ChipSet,
+  owner: Player,
+): Chip {
+  return new Chip(chipDto.color, chipDto.value, null, null, chipSet, owner);
 }

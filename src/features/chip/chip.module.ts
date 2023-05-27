@@ -7,7 +7,11 @@ import { OwnershipModule } from '@/auth/ownership/ownership.module';
 import { ChipResolver } from './chip.resolver';
 
 import { ChipService } from './chip.service';
-import { ChipsByChipIdLoader, ChipsByChipSetIdLoader } from './chip.dataLoader';
+import {
+  ChipsByChipIdLoader,
+  ChipsByChipSetIdLoader,
+  ChipsByChipSetOpaqueIdLoader,
+} from './chip.dataLoader';
 import { ChipEntity } from './schema/chip.db.entity';
 import { ChipSetEntity } from '../chipSet/schema/chipSet.db.entity';
 
@@ -23,6 +27,7 @@ import { ChipSetEntity } from '../chipSet/schema/chipSet.db.entity';
     ChipService,
     ChipsByChipIdLoader,
     ChipsByChipSetIdLoader,
+    ChipsByChipSetOpaqueIdLoader,
   ],
   exports: [ChipService],
 })

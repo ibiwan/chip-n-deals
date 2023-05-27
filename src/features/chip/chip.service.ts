@@ -17,7 +17,10 @@ import { ChipSetService } from '@/features/chipSet/chipSet.service';
 // this module
 import { ChipEntity, ChipRepository } from './schema/chip.db.entity';
 import { Chip } from './schema/chip.domain.object';
-import { CreateChipDto } from './schema/chip.gql.dto.create';
+import {
+  CreateChipDto,
+  chipCreateDtoToDomainObject,
+} from './schema/chip.gql.dto.create';
 import { Player } from '../player/schema/player.domain.object';
 
 @Injectable()
@@ -98,8 +101,31 @@ export class ChipService implements Ownable<Chip, ChipSet> {
     );
 
     const chipEntities = await this.chipRepository.findBy({
-      chipSetId: In(ids),
+      chipSet: In(ids),
     });
+
+    console.log({ chipEntities });
+
+    return chipEntities.map((chipEntity) => chipEntity.toDomainObject());
+  }
+
+  async chipsForChipSetsByOpaqueIds(ids: readonly UUID[]): Promise<Chip[]> {
+    this.logger.verbose(
+      `chipsForChipSetsByOpaqueIds: chipRepository.findBy([${ids.join(', ')}])`,
+      shortStack(),
+    );
+
+    const chipEntities = await this.chipRepository.find({
+      relations: {
+        chipSet: true,
+      },
+      where: {
+        chipSet: { opaqueId: In(ids) },
+      },
+    });
+
+    console.log({ chipEntities });
+
     return chipEntities.map((chipEntity) => chipEntity.toDomainObject());
   }
 
@@ -114,8 +140,7 @@ export class ChipService implements Ownable<Chip, ChipSet> {
       }, chipSet = ${chipSet?.id ?? chipSet?.name}, owner = ${owner.username}`,
     );
 
-    const chip = createChipDto.toDomainObject(chipSet, owner);
-
+    const chip = chipCreateDtoToDomainObject(createChipDto, chipSet, owner);
     return chip;
   }
 
@@ -131,7 +156,7 @@ export class ChipService implements Ownable<Chip, ChipSet> {
       throw Error('specified chipSet does not exist');
     }
 
-    const chip = createChipDto.toDomainObject(chipSet, owner);
+    const chip = chipCreateDtoToDomainObject(createChipDto, chipSet, owner);
     await this.em.save(ChipEntity.fromDomainObject(chip));
 
     return chip;

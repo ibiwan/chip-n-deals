@@ -38,12 +38,13 @@ export class ChipSetModel implements ChipSetCore, GqlModel<ChipSet> {
     );
   }
 
-  static fromDomainObject(chipSet: ChipSet): ChipSetModel {
-    return new ChipSetModel(
-      chipSet.opaqueId,
-      chipSet.name,
-      chipSet.chips.map((chip) => ChipModel.fromDomainObject(chip)),
-      PlayerModel.fromDomainObject(chipSet.owner),
-    );
+  static fromDomainObject(chipSet: ChipSet, isNested = false): ChipSetModel {
+    const chipSetModel = new ChipSetModel(chipSet.opaqueId, chipSet.name, null);
+    if (!isNested) {
+      chipSetModel.chips = chipSet.chips.map((chip) =>
+        ChipModel.fromDomainObject(chip, chipSetModel),
+      );
+    }
+    return chipSetModel;
   }
 }

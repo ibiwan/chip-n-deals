@@ -22,7 +22,6 @@ import {
 } from '@/auth/auth.util';
 import { Ownable } from '@/auth/ownership/ownable.interface';
 import { shortStack } from '@/util/logger.class';
-import { isNumber } from 'lodash';
 
 export const Unowned = Symbol('Unowned');
 
@@ -88,7 +87,8 @@ export class EntityGuard implements NestInterceptor {
         (ownershipGetter as UpdateTarget)?.targetService ??
         null;
 
-      if (id !== null && serviceType !== null) {
+      if (id !== null && id !== undefined && serviceType !== null) {
+        console.log({ handler: handler?.name, id, serviceType });
         const ownedLeaf =
           await this.featureDispatchService.dispatchFeatureService(
             serviceType,
@@ -101,6 +101,8 @@ export class EntityGuard implements NestInterceptor {
           'getAllOwners',
           [ownedLeaf],
         );
+
+        console.log({ owners });
 
         try {
           this.logger.verbose(

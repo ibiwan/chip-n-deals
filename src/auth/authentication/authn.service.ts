@@ -47,6 +47,7 @@ export class AuthService {
     }
 
     const adminHash = this.configService.get('ADMIN_HASH');
+    console.log({ adminUsername, adminHash });
     await this.playerService.createAdmin(adminUsername, adminHash);
   }
 

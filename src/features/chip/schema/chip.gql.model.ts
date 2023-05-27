@@ -9,6 +9,7 @@ import { PlayerModel } from '@/features/player/schema/player.gql.model';
 
 import { Chip } from './chip.domain.object';
 import { ChipCore } from './chip.core';
+import { ChipSet } from '@/features/chipSet/schema/chipSet.domain.object';
 
 @ObjectType('Chip')
 export class ChipModel implements ChipCore, GqlModel<Chip> {
@@ -31,11 +32,14 @@ export class ChipModel implements ChipCore, GqlModel<Chip> {
   @Field(() => ChipSetModel) chipSet: ChipSetModel;
   @Field(() => PlayerModel) owner: PlayerModel;
 
-  static fromDomainObject(chip: Chip): ChipModel {
+  static fromDomainObject(
+    chip: Chip,
+    chipSetModel: ChipSetModel = null,
+  ): ChipModel {
     return new ChipModel(
       chip.color,
       chip.value,
-      ChipSetModel.fromDomainObject(chip.chipSet),
+      chipSetModel ?? ChipSetModel.fromDomainObject(chip.chipSet, true),
       PlayerModel.fromDomainObject(chip.owner),
     );
   }
