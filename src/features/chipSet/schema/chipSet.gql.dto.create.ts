@@ -1,12 +1,9 @@
 import { Field, InputType } from '@nestjs/graphql';
 
-import {
-  CreateChipDto,
-  chipCreateDtoToDomainObject,
-} from '@/features/chip/schema/chip.gql.dto.create';
-
-import { ChipSetCore } from './chipset.core';
 import { Player } from '@/features/player/schema/player.domain.object';
+import { CreateChipDto, chipCreateDtoToDomainObject } from '@/features/chip';
+
+import { ChipSetCore } from './chipSet.core';
 import { ChipSet } from './chipSet.domain.object';
 
 @InputType('CreateChipSetInput')

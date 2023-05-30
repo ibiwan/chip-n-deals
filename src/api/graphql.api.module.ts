@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 
@@ -14,7 +14,7 @@ export interface GqlContextValue {
 
 @Module({
   imports: [
-    FeatureModule,
+    forwardRef(() => FeatureModule),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
@@ -25,7 +25,7 @@ export interface GqlContextValue {
       // },
       formatError: (
         formattedError: GraphQLFormattedError,
-        error: unknown,
+        _error: unknown,
       ): GraphQLFormattedError => {
         console.log(`graphql error: ${JSON.stringify(formattedError)}`);
         return formattedError;

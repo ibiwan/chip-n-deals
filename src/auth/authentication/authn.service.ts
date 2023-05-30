@@ -14,12 +14,16 @@ import { ConfigService } from '@nestjs/config';
 import { Timer } from '@/util/timer.class';
 
 import { PlayerService } from '@/features/player/player.service';
+import { PlayerRepository } from '@/features/player';
 
 @Injectable()
-export class AuthService {
+export class AuthorizationService {
   constructor(
-    @Inject(forwardRef(/* istanbul ignore next */ () => PlayerService))
+    @Inject(forwardRef(() => PlayerService))
     private playerService: PlayerService,
+    @Inject(forwardRef(() => PlayerRepository))
+    private playerRepository: PlayerRepository,
+    @Inject(forwardRef(() => JwtService))
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
@@ -54,14 +58,14 @@ export class AuthService {
   async signIn(username: string, pass: string): Promise<any> {
     this.logger.debug(`signIn: username = ${username}`);
 
-    const user = await this.playerService.playerByUsername(username);
+    const userEntity = await this.playerRepository.getOneByUsername(username);
 
-    if (!user) {
+    if (!userEntity) {
       this.logger.error(`authentication: no user with username = ${username}`);
       throw new UnauthorizedException();
     }
 
-    const passValid = this.validatePassword(user.passhash, pass);
+    const passValid = this.validatePassword(userEntity.passhash, pass);
     if (!passValid) {
       this.logger.error(
         `authentication: incorrect password for user ${username}`,
@@ -69,7 +73,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const payload = { username: user.username, sub: user.opaqueId };
+    const payload = { username: userEntity.username, sub: userEntity.opaqueId };
     const token = await this.jwtService.signAsync(payload, {
       secret: this.jwtSecret,
     });

@@ -4,10 +4,7 @@ import * as _ from 'lodash';
 
 import { INestApplication } from '@nestjs/common';
 
-import {
-  ChipEntityModel,
-  CreateChipDto,
-} from '@/features/chip/schema/chip.gql.model';
+import { CreateChipDto } from '@/features/chip';
 
 import { getTestRootModule } from '@test/helpers/testing.module';
 import {

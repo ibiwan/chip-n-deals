@@ -1,12 +1,13 @@
 import { UUID } from 'crypto';
 
-import { DomainObject } from '@/util/root.types';
-import { OwnableObject } from '@/auth/ownership/ownable.interface';
-import { ChipSet } from '@/features/chipSet/schema/chipSet.domain.object';
-import { ChipCore } from './chip.core';
-import { Player } from '@/features/player/schema/player.domain.object';
+import { DomainObject, OwnableObject } from '@/util/root.types';
 
-export class Chip implements ChipCore, DomainObject, OwnableObject {
+import { ChipSet } from '@/features/chipSet';
+import { Player } from '@/features/player';
+
+import { ChipCore } from './chip.core';
+
+export class Chip implements ChipCore, DomainObject, OwnableObject<Chip> {
   constructor(
     color: string,
     value: number,

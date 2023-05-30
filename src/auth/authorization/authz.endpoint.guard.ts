@@ -6,6 +6,8 @@ import {
   CanActivate,
   Injectable,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -17,14 +19,20 @@ import {
   IS_PUBLIC_KEY,
 } from '@/auth/auth.util';
 import { PlayerService } from '@/features/player/player.service';
+import { PlayerRepository } from '@/features/player';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private configService: ConfigService,
+    @Inject(forwardRef(() => JwtService))
     private jwtService: JwtService,
-    private reflector: Reflector,
+    @Inject(forwardRef(() => PlayerService))
     private playerService: PlayerService,
+    @Inject(forwardRef(() => PlayerRepository))
+    private playerRepository: PlayerRepository,
+
+    private reflector: Reflector,
+    private configService: ConfigService,
   ) {
     this.jwtSecret = this.configService.get('JWT_SECRET');
   }
@@ -55,16 +63,16 @@ export class AuthGuard implements CanActivate {
     }
 
     const userClaims = (await this.verifyToken(token)) as any;
-    const user = await this.playerService.playerByOpaqueId(
+    const userEntity = await this.playerRepository.getOneByOpaqueId(
       userClaims.sub as UUID,
     );
-    if (!user) {
+    if (!userEntity) {
       this.logger.error(
         `unauthorized access: no user with id = ${userClaims.sub}`,
       );
       throw new UnauthorizedException();
     }
-    request['user'] = user;
+    request['user'] = userEntity;
 
     return true;
   }

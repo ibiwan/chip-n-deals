@@ -1,10 +1,11 @@
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { UUID, randomUUID } from 'crypto';
-import { Column, Entity, PrimaryGeneratedColumn, Repository } from 'typeorm';
 
 import { SqlBool } from '@/datasource/sqlite.util';
+import { DBEntity } from '@/util/root.types';
+
 import { Player } from './player.domain.object';
 import { PlayerCore } from './player.core';
-import { DBEntity } from '@/util/root.types';
 
 @Entity('player')
 export class PlayerEntity implements PlayerCore, DBEntity<Player> {
@@ -20,25 +21,25 @@ export class PlayerEntity implements PlayerCore, DBEntity<Player> {
   @Column() passhash: string;
   @Column() isAdmin: number = SqlBool.False;
 
-  static fromDomainObject(player: Player): PlayerEntity {
-    const playerEntity = new PlayerEntity(player.username, player.passhash);
-    playerEntity.id = player.id;
-    if (player.isAdmin) {
-      playerEntity.isAdmin = SqlBool.True;
-    }
-    return playerEntity;
-  }
+  // static fromDomainObject(player: Player): PlayerEntity {
+  //   const playerEntity = new PlayerEntity(player.username, player.passhash);
+  //   playerEntity.id = player.id;
+  //   if (player.isAdmin) {
+  //     playerEntity.isAdmin = SqlBool.True;
+  //   }
+  //   return playerEntity;
+  // }
 
-  toDomainObject(): Player {
-    const player = new Player(
-      this.username,
-      this.passhash,
-      this.id,
-      this.opaqueId,
-      this.isAdmin == SqlBool.True,
-    );
-    return player;
-  }
+  // toDomainObject(): Player {
+  //   const player = new Player(
+  //     this.username,
+  //     this.passhash,
+  //     this.id,
+  //     this.opaqueId,
+  //     this.isAdmin == SqlBool.True,
+  //   );
+  //   return player;
+  // }
 }
 
-export type PlayerRepository = Repository<PlayerEntity>;
+// export type PlayerRepository = Repository<PlayerEntity>;

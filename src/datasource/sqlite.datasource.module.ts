@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { FeatureModule } from '@/features/features.module';
@@ -29,7 +29,10 @@ export const prodDbConfig = {
 };
 
 @Module({
-  imports: [TypeOrmModule.forRoot(devDbConfig), FeatureModule],
+  imports: [
+    TypeOrmModule.forRoot(devDbConfig),
+    forwardRef(() => FeatureModule),
+  ],
   exports: [],
 })
 export class SqliteDatasourceModule {}

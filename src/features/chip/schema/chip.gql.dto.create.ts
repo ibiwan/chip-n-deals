@@ -1,10 +1,11 @@
 import { UUID } from 'crypto';
-
 import { Field, InputType } from '@nestjs/graphql';
+
+import { ChipSet } from '@/features/chipSet';
+import { Player } from '@/features/player';
+
 import { ChipCore } from './chip.core.js';
 import { Chip } from './chip.domain.object.js';
-import { ChipSet } from '@/features/chipSet/schema/chipSet.domain.object.js';
-import { Player } from '@/features/player/schema/player.domain.object.js';
 
 @InputType('CreateChipInput')
 export class CreateChipDto implements ChipCore {
@@ -14,7 +15,7 @@ export class CreateChipDto implements ChipCore {
   @Field()
   value: number;
 
-  @Field(/* istanbul ignore next */ () => String, {
+  @Field(() => String, {
     nullable: true,
   })
   chipSetOpaqueId?: UUID;

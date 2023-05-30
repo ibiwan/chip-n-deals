@@ -2,16 +2,6 @@ import * as supertest from 'supertest';
 import { UUID } from 'crypto';
 import * as _ from 'lodash';
 
-import {
-  ChipCore,
-  ChipEntityModel,
-  CreateChipDto,
-} from '@/features/chip/schema/chip.gql.model';
-import {
-  ChipSetCore,
-  ChipSetEntityModel,
-} from '@/features/chipSet/chipSet/chipSet.entityModel';
-
 export type SuperClient = supertest.SuperTest<supertest.Test>;
 
 export interface ChipDbRow extends ChipCore {

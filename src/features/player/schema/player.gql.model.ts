@@ -20,19 +20,19 @@ export class PlayerModel implements PlayerCore, GqlModel<Player> {
   @Field() opaqueId?: UUID;
   @Field() username: string;
   @Field() passhash: string;
-  @Field() isAdmin: number = SqlBool.False;
+  @Field() isAdmin: boolean = false;
 
-  static fromDomainObject(player: Player): PlayerModel {
-    return new PlayerModel(player.username, player.opaqueId, null);
-  }
+  // static fromDomainObject(player: Player): PlayerModel {
+  //   return new PlayerModel(player.username, player.opaqueId, null);
+  // }
 
-  toDomainObject(): Player {
-    return new Player(
-      this.username,
-      this.passhash,
-      null,
-      this.opaqueId,
-      this.isAdmin == SqlBool.True,
-    );
-  }
+  // toDomainObject(): Player {
+  //   return new Player(
+  //     this.username,
+  //     this.passhash,
+  //     null,
+  //     this.opaqueId,
+  //     this.isAdmin == SqlBool.True,
+  //   );
+  // }
 }

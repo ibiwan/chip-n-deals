@@ -1,51 +1,73 @@
-import { UUID } from 'crypto';
-import { Loader } from 'nestjs-dataloader';
-
 import {
-  Args,
-  Context,
-  Mutation,
-  Parent,
-  Query,
+  Inject,
+  // , UseInterceptors
+  forwardRef,
+} from '@nestjs/common';
+import { Loader } from 'nestjs-dataloader';
+import { UUID } from 'crypto';
+import {
   ResolveField,
   Resolver,
+  Mutation,
+  Context,
+  Parent,
+  Query,
+  Args,
 } from '@nestjs/graphql';
-import { Logger, UseInterceptors } from '@nestjs/common';
 
-import { Owned, EntityGuard } from '@/auth/authorization/authz.entity.guard';
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
+import {
+  PlayerDataByOpaqueIdLoader,
+  PlayerByOpaqueIdLoader,
+  PlayerDataByIdLoader,
+  PlayerByIdLoader,
+  PlayerMapper,
+  PlayerEntity,
+  PlayerModel,
+  Player,
+} from '@/features/player';
+
 import {
   ChipSetByOpaqueIdLoader,
   ChipSetOpaqueDataLoader,
-} from '@/features/chipSet/chipSet.dataLoader';
+  ChipSetService,
+  ChipSetMapper,
+  ChipSetModel,
+} from '@/features/chipSet';
+
+import { ChipsByChipIdLoader, ChipDataLoader } from './loaders';
+
+import {
+  CreateChipDto,
+  ChipModel,
+  ChipMapper,
+  ChipEntity,
+  Chip,
+} from './schema';
 
 import { ChipService } from './chip.service';
-import { ChipDataLoader, ChipsByChipIdLoader } from './chip.dataLoader';
-import { PlayerDataLoader, PlayerLoader } from '../player/player.dataLoader';
-import { ChipModel } from './schema/chip.gql.model';
-import { ChipSetModel } from '../chipSet/schema/chipSet.gql.model';
-import { Chip } from './schema/chip.domain.object';
-import { Player } from '../player/schema/player.domain.object';
-import { CreateChipDto } from './schema/chip.gql.dto.create';
+import { OwnedMethod } from '@/auth/authorization/owned.decorator';
 
-@UseInterceptors(EntityGuard)
+// @UseInterceptors(EntityGuard)
 // @UseGuards(AuthGuard)
-@Resolver(/* istanbul ignore next */ () => ChipModel)
+@Resolver(() => ChipModel)
 export class ChipResolver {
   constructor(
+    @Inject(forwardRef(() => PlayerMapper))
+    private playerMapper: PlayerMapper,
+    @Inject(forwardRef(() => ChipSetMapper))
+    private chipSetMapper: ChipSetMapper,
+
     private chipService: ChipService,
-    private chipSetService: ChipSetService,
-  ) {}
+    private chipMapper: ChipMapper,
+  ) {
+    console.log({ OwnedMethod });
+  }
 
-  private readonly logger = new Logger(this.constructor.name);
-
-  @Query(/* istanbul ignore next */ () => [ChipModel])
+  @Query(() => [ChipModel])
   async allChips(): Promise<ChipModel[]> {
-    this.logger.verbose(`allChips`);
-    const chips = (await this.chipService.allChips()).map((chip) =>
-      ChipModel.fromDomainObject(chip),
-    );
-    return chips;
+    const chips = await this.chipService.allChips();
+
+    return this.chipMapper.gqlFromDomainMany(chips);
   }
 
   @Query(() => [ChipModel])
@@ -53,11 +75,11 @@ export class ChipResolver {
     @Args('chipset_opaque_id', { type: () => String })
     opaqueId: UUID,
   ): Promise<ChipModel[]> {
-    this.logger.verbose(`chipsForChipSet: opaqueId = ${opaqueId}`);
-    const chipSet = await this.chipSetService.chipSet(opaqueId);
-    return (await this.chipService.chipsForChipSet(chipSet.id)).map((chip) =>
-      ChipModel.fromDomainObject(chip),
-    );
+    const chips = await this.chipService.chipsForChipSetsByOpaqueIds([
+      opaqueId,
+    ]);
+
+    return this.chipMapper.gqlFromDomainMany(chips);
   }
 
   @ResolveField()
@@ -66,21 +88,21 @@ export class ChipResolver {
     @Loader(ChipSetByOpaqueIdLoader)
     chipSetOpaqueLoader: ChipSetOpaqueDataLoader,
   ): Promise<ChipSetModel> {
-    this.logger.verbose(`chipSet: id = ${chip.chipSet.opaqueId}`);
-    return ChipSetModel.fromDomainObject(
-      await chipSetOpaqueLoader.load(chip.chipSet.opaqueId),
-    );
+    console.log('CHIP.CHIPSET RESOLVER');
+    const chipSetEntity = await chipSetOpaqueLoader.load(chip.chipSet.opaqueId);
+
+    return this.chipSetMapper.gqlFromDb(chipSetEntity);
   }
 
   @ResolveField()
   async owner(
     @Parent() chip: Chip,
-    @Loader(PlayerLoader)
-    playerLoader: PlayerDataLoader,
-  ): Promise<Player> {
-    this.logger.verbose(`player: id = ${chip.owner.id}`);
-    const owner = await playerLoader.load(chip.owner.id);
-    return owner;
+    @Loader(PlayerByOpaqueIdLoader)
+    playerLoader: PlayerDataByOpaqueIdLoader,
+  ): Promise<PlayerModel> {
+    const ownerEntity = await playerLoader.load(chip.owner.opaqueId);
+
+    return this.playerMapper.gqlFromDb(ownerEntity);
   }
 
   @Query(() => [ChipModel])
@@ -89,18 +111,19 @@ export class ChipResolver {
     @Loader(ChipsByChipIdLoader)
     chipLoader: ChipDataLoader,
   ): Promise<(Error | ChipModel)[]> {
-    this.logger.verbose(`getChips: ids = ${ids.join(', ')}`);
+    const chipEntityMaybes = await chipLoader.loadMany(ids);
+    const chipEntities = chipEntityMaybes.filter(
+      (c) => c instanceof Chip,
+    ) as ChipEntity[];
 
-    return (await chipLoader.loadMany(ids))
-      .filter((chip) => chip instanceof Chip)
-      .map((chip) => ChipModel.fromDomainObject(chip as Chip));
+    return this.chipMapper.gqlFromDbMany(chipEntities);
   }
 
-  @Mutation(() => ChipModel)
-  @Owned({
+  @OwnedMethod({
     getParentId: (data) => data.chipData.chipSetOpaqueId,
     parentService: ChipSetService,
   })
+  @Mutation(() => ChipModel)
   async createChip(
     @Args({
       name: 'chipData',
@@ -110,14 +133,10 @@ export class ChipResolver {
 
     @Context() context,
   ): Promise<ChipModel> {
-    this.logger.verbose(
-      `createChip: color = ${chipData.color}, chipSet = ${chipData.chipSetOpaqueId}`,
-    );
+    const currentUserEntity = context.req.user as PlayerEntity;
+    const chip = await this.chipService.create(chipData, currentUserEntity);
 
-    const currentUser = context.req.user as Player;
-
-    return ChipModel.fromDomainObject(
-      await this.chipService.create(chipData, currentUser),
-    );
+    const chipModel = await this.chipMapper.gqlFromDomain(chip);
+    return chipModel;
   }
 }

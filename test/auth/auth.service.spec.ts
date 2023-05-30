@@ -1,13 +1,13 @@
-import { AuthService } from '@/auth/authentication/authn.service';
+import { AuthorizationService } from '@/auth/authentication/authn.service';
 import { getTestRootModule } from '@test/helpers/testing.module';
 
-describe('AuthService', () => {
-  let service: AuthService;
+describe('AuthorizationService', () => {
+  let service: AuthorizationService;
 
   beforeEach(async () => {
     const module = await getTestRootModule();
 
-    service = module.get<AuthService>(AuthService);
+    service = module.get<AuthorizationService>(AuthorizationService);
   });
 
   it('should be defined', () => {

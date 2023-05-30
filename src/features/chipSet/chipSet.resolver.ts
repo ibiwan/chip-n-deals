@@ -1,68 +1,78 @@
-import { UUID } from 'crypto';
-import * as DataLoader from 'dataloader';
+import { Inject, UseInterceptors, forwardRef } from '@nestjs/common';
 import { Loader } from 'nestjs-dataloader';
-
+import { UUID } from 'crypto';
 import {
-  Args,
-  Context,
-  Mutation,
-  Parent,
-  Query,
   ResolveField,
   Resolver,
+  Mutation,
+  Context,
+  Parent,
+  Query,
+  Args,
 } from '@nestjs/graphql';
-import { Logger, UseInterceptors } from '@nestjs/common';
 
-import { EntityGuard, Owned } from '@/auth/authorization/authz.entity.guard';
+import { EntityGuard } from '@/auth/authorization/authz.entity.guard';
+import { OwnedMethod } from '@/auth/authorization/owned.decorator';
 
 import {
-  ChipOpaqueDataLoader,
-  ChipsByChipSetIdLoader,
-  ChipsByChipSetOpaqueIdLoader,
-} from '@/features/chip/chip.dataLoader';
-import { Player } from '@/features/player/schema/player.domain.object';
+  PlayerDataByOpaqueIdLoader,
+  PlayerByOpaqueIdLoader,
+  PlayerDataByIdLoader,
+  PlayerByIdLoader,
+  PlayerMapper,
+  PlayerModel,
+  Player,
+} from '@/features/player';
 
-import { CreateChipSetDto } from './schema/chipSet.gql.dto.create';
-import { ChipSetEntity } from './schema/chipSet.db.entity';
-import { PlayerDataLoader, PlayerLoader } from '../player/player.dataLoader';
-import { ChipSetModel } from './schema/chipSet.gql.model';
-import { ChipSetLoader } from './chipSet.dataLoader';
+import {
+  ChipsByChipSetOpaqueIdLoader,
+  ChipOpaqueDataLoader,
+  ChipEntity,
+  ChipMapper,
+  ChipModel,
+} from '@/features/chip';
+
+import { ChipSetDataLoader, ChipSetByIdLoader } from './loaders';
+import {
+  CreateChipSetDto,
+  ChipSetEntity,
+  ChipSetMapper,
+  ChipSetModel,
+  ChipSet,
+} from './schema';
 import { ChipSetService } from './chipSet.service';
-import { ChipSet } from './schema/chipSet.domain.object';
-import { ChipDataLoader } from '@/features/chip/chip.dataLoader';
+import { ChipSetModule } from '.';
 
 @UseInterceptors(EntityGuard)
 @Resolver(() => ChipSetModel)
 export class ChipSetResolver {
   constructor(
-    private chipSetService: ChipSetService, // private logger: Logger,
-  ) {}
-  private readonly logger = new Logger(this.constructor.name);
+    @Inject(forwardRef(() => PlayerMapper))
+    private playerMapper: PlayerMapper,
+    @Inject(forwardRef(() => ChipMapper))
+    private chipMapper: ChipMapper,
 
-  /**
-   * @method allChipSets GQL Query: all, with chips
-   */
-  @Query(() => [ChipSetModel])
-  async allChipSets(): Promise<ChipSetModel[]> {
-    this.logger.verbose(`allChipSets`);
-
-    const chipSets = (await this.chipSetService.allChipSets()).map((chipSet) =>
-      ChipSetModel.fromDomainObject(chipSet),
-    );
-    return chipSets;
+    private chipSetService: ChipSetService,
+    private chipSetMapper: ChipSetMapper,
+  ) {
+    console.log({ OwnedMethod });
   }
 
-  /**
-   * @method chipSet GQL Query: fetch one by opaqueId
-   */
+  @Query(() => [ChipSetModel])
+  async allChipSets(): Promise<ChipSetModel[]> {
+    const chipSets = await this.chipSetService.allChipSets();
+
+    return this.chipSetMapper.gqlFromDomainMany(chipSets);
+  }
+
   @Query(() => ChipSetModel)
   async chipSet(
     @Args('opaque_id', { type: () => String })
     opaqueId: UUID,
   ): Promise<ChipSetModel> {
-    this.logger.verbose(`chipSet: opaqueId = ${opaqueId}`);
     const chipSet = await this.chipSetService.chipSet(opaqueId);
-    return ChipSetModel.fromDomainObject(chipSet);
+
+    return this.chipSetMapper.gqlFromDomain(chipSet);
   }
 
   /**
@@ -73,40 +83,45 @@ export class ChipSetResolver {
     @Parent() chipSet: ChipSetModel,
     @Loader(ChipsByChipSetOpaqueIdLoader)
     chipLoader: ChipOpaqueDataLoader,
-  ) {
-    this.logger.verbose(`chips: chipSet.id = ${chipSet.opaqueId}`);
-    console.log({ chipSet });
-    return chipLoader.load(chipSet.opaqueId);
+  ): Promise<ChipModel[]> {
+    const results = await chipLoader.loadMany([chipSet.opaqueId]);
+
+    const chipEntities = results.filter(
+      (item) => item instanceof ChipEntity,
+    ) as ChipEntity[];
+
+    return this.chipMapper.gqlFromDbMany(chipEntities) as Promise<ChipModel[]>;
   }
 
   @ResolveField()
   async owner(
-    @Parent() chipSet: ChipSet,
-    @Loader(PlayerLoader)
-    playerLoader: PlayerDataLoader,
-  ): Promise<Player> {
-    this.logger.verbose(`player: id = ${chipSet.owner.id}`);
-
-    const owner = await playerLoader.load(chipSet.owner.id);
-    return owner;
+    @Parent() chipSet: ChipSetModel,
+    @Loader(PlayerByOpaqueIdLoader)
+    playerLoader: PlayerDataByOpaqueIdLoader,
+  ): Promise<PlayerModel> {
+    const ownerEntity = await playerLoader.load(chipSet.owner.opaqueId);
+    return this.playerMapper.gqlFromDb(ownerEntity);
   }
 
   @Query(() => [ChipSetModel])
   async getChipSets(
     @Args({ name: 'ids', type: () => [Number] }) ids: number[],
-    @Loader(ChipSetLoader)
-    chipSetLoader: DataLoader<ChipSetEntity['id'], ChipSetModel>,
+    @Loader(ChipSetByIdLoader)
+    chipSetLoader: ChipSetDataLoader,
   ): Promise<(Error | ChipSetModel)[]> {
-    this.logger.verbose(`getChipSets: ids = ${ids}`);
+    const results = await chipSetLoader.loadMany(ids);
+    const chipSetEntities = results.filter(
+      (cs) => cs instanceof ChipSetEntity,
+    ) as ChipSetEntity[];
 
-    return chipSetLoader.loadMany(ids);
+    return this.chipSetMapper.gqlFromDbMany(chipSetEntities);
   }
 
   /**
    * @method createChipSet GQL Mutation: create with chips
    */
   @Mutation(() => ChipSetModel, { name: 'createChipSet' })
-  @Owned({
+  @OwnedMethod({
     getTargetId: (data) => data.chipSetData.id,
     targetService: ChipSetService,
   })
@@ -121,19 +136,11 @@ export class ChipSetResolver {
   ): Promise<ChipSetModel> {
     const currentUser: Player = context.req.user;
 
-    this.logger.verbose(
-      `createChipSet: name = ${chipSetData.name}, current user = ${currentUser.id}: ${currentUser.username}`,
-    );
-    console.log({ chipSetData });
     const chipSet: ChipSet = await this.chipSetService.create(
       chipSetData as CreateChipSetDto,
       currentUser,
     );
-    console.log({ chipSet });
-    const chipSetModel: ChipSetModel = await ChipSetModel.fromDomainObject(
-      chipSet,
-    );
-    console.log({ chipSetModel });
-    return chipSetModel;
+
+    return this.chipSetMapper.gqlFromDomain(chipSet);
   }
 }

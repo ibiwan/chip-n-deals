@@ -1,15 +1,13 @@
-import { UUID, randomUUID } from 'crypto';
-
 import { Field, ObjectType } from '@nestjs/graphql';
+import { UUID, randomUUID } from 'crypto';
 
 import { GqlModel } from '@/util/root.types';
 
-import { ChipSetModel } from '@/features/chipSet/schema/chipSet.gql.model';
-import { PlayerModel } from '@/features/player/schema/player.gql.model';
+import { ChipSetModel } from '@/features/chipSet';
+import { PlayerModel } from '@/features/player';
 
 import { Chip } from './chip.domain.object';
 import { ChipCore } from './chip.core';
-import { ChipSet } from '@/features/chipSet/schema/chipSet.domain.object';
 
 @ObjectType('Chip')
 export class ChipModel implements ChipCore, GqlModel<Chip> {
@@ -32,19 +30,15 @@ export class ChipModel implements ChipCore, GqlModel<Chip> {
   @Field(() => ChipSetModel) chipSet: ChipSetModel;
   @Field(() => PlayerModel) owner: PlayerModel;
 
-  static fromDomainObject(
-    chip: Chip,
-    chipSetModel: ChipSetModel = null,
-  ): ChipModel {
-    return new ChipModel(
-      chip.color,
-      chip.value,
-      chipSetModel ?? ChipSetModel.fromDomainObject(chip.chipSet, true),
-      PlayerModel.fromDomainObject(chip.owner),
-    );
-  }
-
-  toDomainObject(): Chip {
-    throw new Error('Method not implemented.');
-  }
+  // static fromDomainObject(
+  //   chip: Chip,
+  //   chipSetModel: ChipSetModel = null,
+  // ): ChipModel {
+  //   return new ChipModel(
+  //     chip.color,
+  //     chip.value,
+  //     chipSetModel ?? ChipSetModel.fromDomainObject(chip.chipSet, true),
+  //     PlayerModel.fromDomainObject(chip.owner),
+  //   );
+  // }
 }

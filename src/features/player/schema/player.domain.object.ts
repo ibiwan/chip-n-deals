@@ -10,7 +10,7 @@ export class Player implements PlayerCore, DomainObject {
     passhash: string,
     id: number = null,
     opaqueId: UUID = null,
-    isAdmin: boolean = false,
+    isAdmin = false,
   ) {
     this.username = username;
     this.passhash = passhash;

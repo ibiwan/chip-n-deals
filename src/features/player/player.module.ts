@@ -2,23 +2,29 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
-import { AuthorizationModule } from '@/auth/authorization/authz.module';
 import { AuthenticationModule } from '@/auth/authentication/authn.module';
+import { AuthorizationModule } from '@/auth/authorization/authz.module';
 
+import { PlayerByOpaqueIdLoader } from './loaders/player.dataLoader.opaqueId';
+import { PlayerRepository, PlayerEntity, PlayerMapper } from './schema';
 import { PlayerService } from './player.service';
-import { PlayerLoader } from './player.dataLoader';
-import { PlayerEntity } from './schema/player.db.entity';
+import { PlayerByIdLoader } from './loaders';
 
 @Module({
   imports: [
-    // forwardRef accommodates circular references
-    forwardRef(/* istanbul ignore next */ () => AuthenticationModule),
-    forwardRef(/* istanbul ignore next */ () => AuthorizationModule),
-    TypeOrmModule.forFeature([PlayerEntity]),
-    ConfigModule,
+    forwardRef(() => AuthenticationModule),
+    forwardRef(() => AuthorizationModule),
+    forwardRef(() => ConfigModule),
+    forwardRef(() => TypeOrmModule.forFeature([PlayerEntity])),
   ],
 
-  providers: [PlayerService, PlayerLoader],
-  exports: [PlayerService],
+  providers: [
+    PlayerByOpaqueIdLoader,
+    PlayerRepository,
+    PlayerByIdLoader,
+    PlayerService,
+    PlayerMapper,
+  ],
+  exports: [PlayerService, PlayerMapper, PlayerRepository],
 })
 export class PlayerModule {}

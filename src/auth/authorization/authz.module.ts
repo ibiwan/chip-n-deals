@@ -2,12 +2,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { PlayerModule } from '@/features/player/player.module';
+import { PlayerModule } from '@/features/player';
 
 import { AuthGuard } from './authz.endpoint.guard';
 
 @Module({
-  imports: [ConfigModule, forwardRef(() => PlayerModule)],
+  imports: [forwardRef(() => ConfigModule), forwardRef(() => PlayerModule)],
   providers: [
     {
       provide: APP_GUARD,

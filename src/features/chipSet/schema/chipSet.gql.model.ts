@@ -3,11 +3,11 @@ import { UUID } from 'crypto';
 import { Field, ObjectType } from '@nestjs/graphql';
 
 import { GqlModel } from '@/util/root.types';
-
-import { ChipModel } from '@/features/chip/schema/chip.gql.model';
-import { ChipSetCore } from './chipset.core';
-import { ChipSet } from './chipSet.domain.object';
 import { PlayerModel } from '@/features/player/schema/player.gql.model';
+import { ChipModel } from '@/features/chip';
+
+import { ChipSetCore } from './chipSet.core';
+import { ChipSet } from './chipSet.domain.object';
 
 @ObjectType('ChipSet')
 export class ChipSetModel implements ChipSetCore, GqlModel<ChipSet> {
@@ -28,23 +28,23 @@ export class ChipSetModel implements ChipSetCore, GqlModel<ChipSet> {
   @Field(() => [ChipModel]) chips: ChipModel[];
   @Field(() => PlayerModel) owner: PlayerModel;
 
-  toDomainObject(): ChipSet {
-    return new ChipSet(
-      this.name,
-      null,
-      this.opaqueId,
-      this.chips.map((chip) => chip.toDomainObject()),
-      this.owner.toDomainObject(),
-    );
-  }
+  // toDomainObject(): ChipSet {
+  //   return new ChipSet(
+  //     this.name,
+  //     null,
+  //     this.opaqueId,
+  //     this.chips.map((chip) => chip.toDomainObject()),
+  //     this.owner.toDomainObject(),
+  //   );
+  // }
 
-  static fromDomainObject(chipSet: ChipSet, isNested = false): ChipSetModel {
-    const chipSetModel = new ChipSetModel(chipSet.opaqueId, chipSet.name, null);
-    if (!isNested) {
-      chipSetModel.chips = chipSet.chips.map((chip) =>
-        ChipModel.fromDomainObject(chip, chipSetModel),
-      );
-    }
-    return chipSetModel;
-  }
+  // static fromDomainObject(chipSet: ChipSet, isNested = false): ChipSetModel {
+  //   const chipSetModel = new ChipSetModel(chipSet.opaqueId, chipSet.name, null);
+  //   if (!isNested) {
+  //     chipSetModel.chips = chipSet.chips.map((chip) =>
+  //       ChipModel.fromDomainObject(chip, chipSetModel),
+  //     );
+  //   }
+  //   return chipSetModel;
+  // }
 }

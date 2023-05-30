@@ -9,11 +9,11 @@ import {
 
 import { Public } from '@/auth/auth.util';
 
-import { AuthService } from './authn.service';
+import { AuthorizationService } from './authn.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthorizationService) {}
 
   private readonly logger = new Logger(this.constructor.name);
 
