@@ -1,28 +1,28 @@
-import { IncomingMessage, ServerResponse } from 'http';
-
-import { Module, forwardRef } from '@nestjs/common';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { Module, forwardRef } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-
-import { FeatureModule } from '@/features/features.module';
 import { GraphQLFormattedError } from 'graphql';
 
-export interface GqlContextValue {
-  req: IncomingMessage;
-  res: ServerResponse;
-}
+import {
+  allFeatures,
+  ChipSetModule,
+  PlayerModule,
+  TableModule,
+  ChipModule,
+} from '@/features';
 
 @Module({
   imports: [
-    forwardRef(() => FeatureModule),
+    forwardRef(() => ChipSetModule),
+    forwardRef(() => PlayerModule),
+    forwardRef(() => TableModule),
+    forwardRef(() => ChipModule),
+
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
-      include: [FeatureModule],
+      include: allFeatures,
       path: 'graphql',
-      // context: ({ req, res }) => {
-      //   return { req, res };
-      // },
       formatError: (
         formattedError: GraphQLFormattedError,
         _error: unknown,
@@ -31,6 +31,10 @@ export interface GqlContextValue {
         return formattedError;
       },
     }),
+    // template for custom context entries/formats
+    // context: ({ req, res }) => {
+    //   return { req, res };
+    // },
   ],
 })
 export class GraphqlApiModule {}

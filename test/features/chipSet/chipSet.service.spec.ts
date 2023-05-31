@@ -2,12 +2,12 @@ import { EntityManager } from 'typeorm';
 import { randomUUID } from 'crypto';
 
 import { ChipEntityModel } from '@/features/chip/schema/chip.gql.model';
-import { ChipService } from '@/features/chip/chip.service';
+import { ChipService } from '@/features/chip/services/chip.service';
 import {
   ChipSetEntityModel,
   ChipSetRepository,
 } from '@/features/chipSet/chipSet/chipSet.entityModel';
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
+import { ChipSetService } from '@/features/chipSet/services/chipSet.service';
 
 import { testChipSetDtos, testChipSetEMs } from '@test/fixtures/test.init.data';
 

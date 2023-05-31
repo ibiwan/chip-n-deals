@@ -3,28 +3,26 @@ import { UUID } from 'crypto';
 import * as _ from 'lodash';
 
 import {
-  ChipEntityModel,
+  ChipDbRow,
+  ChipEntity,
+  ChipSetDbRow,
+  ChipSetEntity,
   CreateChipDto,
-} from '@/features/chip/schema/chip.gql.model';
-import {
-  ChipSetEntityModel,
   CreateChipSetDto,
-} from '@/features/chipSet/chipSet/chipSet.entityModel';
-import { PlayerEntityModel } from '@/features/player/schema/player.entityModel';
-
-import { ChipDbRow, ChipSetDbRow } from '@test/helpers/types';
+  PlayerEntity,
+} from '@/features';
 
 export const testChipSetDbRows: ChipSetDbRow[] = [
   {
     id: 4,
-    name: 'vegas',
     opaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    name: 'vegas',
     ownerId: 1,
   },
   {
     id: 7,
-    name: 'atlantic',
     opaqueId: '53fdc649-d3d2-4847-8813-732fdc8217a9',
+    name: 'atlantic',
     ownerId: 1,
   },
 ];
@@ -32,83 +30,83 @@ export const testChipSetDbRows: ChipSetDbRow[] = [
 export const testChipDbRows: ChipDbRow[] = [
   {
     id: 2,
+    opaqueId: '268e45da-00d3-4dcb-99e8-9b3578700def',
     color: 'yed',
     value: 99,
-    chipSetOpaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    chipSetId: 4,
     ownerId: 1,
   },
   {
     id: 6,
+    opaqueId: 'f1636767-5069-48be-9455-33fb99b40121',
     color: 'pinkle',
     value: 91,
-    chipSetOpaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    chipSetId: 4,
     ownerId: 1,
   },
   {
     id: 12,
+    opaqueId: 'efed6e53-0f75-4f95-866f-ef33bb192688',
     color: 'pucett',
     value: 1,
-    chipSetOpaqueId: '245d1b45-6437-4fbb-95a3-92bce5cb55de',
+    chipSetId: 4,
     ownerId: 1,
   },
   {
     id: 87,
+    opaqueId: '9eddccb5-4bdd-4506-b6bf-ec6a5c34a79e',
     color: 'ruschia',
     value: 100,
-    chipSetOpaqueId: '53fdc649-d3d2-4847-8813-732fdc8217a9',
+    chipSetId: 7,
     ownerId: 1,
   },
 ];
 
-export const testChipSetEMs = testChipSetDbRows.map((row: ChipSetDbRow) => {
-  const set = new ChipSetEntityModel(row.name, []);
-  set.id = row.id;
-  set.opaqueId = row.opaqueId;
-  set.ownerId = row.ownerId;
-
-  return set;
-});
-
-export const testChipSetEmLookup: { (oid: UUID): ChipSetEntityModel } =
-  testChipSetEMs.reduce((acc, cur) => {
-    acc[cur.opaqueId] = cur;
-    return acc;
-  }, {}) as { (oid: UUID): ChipSetEntityModel };
-
-export const testChipEMs: ChipEntityModel[] = testChipDbRows.map((row) => {
-  const chip = new ChipEntityModel(
-    row.color,
-    row.value,
-    testChipSetEmLookup[row.chipSetOpaqueId],
-  );
-  chip.id = row.id;
-  chip.ownerId = row.ownerId;
-  testChipSetEmLookup[row.chipSetOpaqueId].chips.push(chip);
-  return chip;
-});
-
-export const testChipDtos: CreateChipDto[] = testChipDbRows.map((row) =>
-  _.pick(row, ['color', 'value', 'chipSetOpaqueId']),
-);
-
-export const testChipSetDtos: CreateChipSetDto[] = testChipSetDbRows.map(
-  (row: ChipSetDbRow) => {
-    const { name, opaqueId } = row;
-    const chips = testChipDtos
-      .filter(({ chipSetOpaqueId }) => chipSetOpaqueId == opaqueId)
-      .map((chip) => _.omit(chip, 'chipSetOpaqueId'));
-
-    return {
-      name,
-      chips,
-    };
+export const testChipSetEntities: ChipSetEntity[] = testChipSetDbRows.map(
+  (chipSetRow: ChipSetDbRow) => {
+    const { id, opaqueId, name, ownerId } = chipSetRow;
+    return { id, opaqueId, name, chips: [], ownerId } as ChipSetEntity;
   },
 );
 
-export const testOrphanChipEMs = testChipDbRows.map(
-  (row) => new ChipEntityModel(row.color, row.value),
+export const testChipSetEntityLookup: Record<UUID, ChipSetEntity> =
+  testChipSetEntities.reduce((table, chipSetEntity) => {
+    table[chipSetEntity.opaqueId] = chipSetEntity;
+    return table;
+  }, {});
+
+export const testChipEntities: ChipEntity[] = testChipDbRows.map((chipRow) => {
+  const { opaqueId, color, value, id, ownerId } = chipRow;
+  const chipSet = testChipSetEntityLookup[chipRow.opaqueId];
+  return { id, opaqueId, color, value, chipSet, ownerId } as ChipEntity;
+});
+
+export const testChipDtos: CreateChipDto[] = testChipDbRows.map(
+  (chipDb: ChipDbRow) => {
+    const { color, value, chipSetId } = chipDb;
+    const chipSetOpaqueId = testChipSetDbRows.find(
+      (chipSetDb) => (chipSetDb.id = chipSetId),
+    ).opaqueId;
+    return { color, value, chipSetOpaqueId } as CreateChipDto;
+  },
 );
 
+export const testChipSetDtos: CreateChipSetDto[] = testChipSetDbRows.map(
+  (chipSetRow: ChipSetDbRow) => {
+    const { name, opaqueId } = chipSetRow;
+    const chips = testChipDtos.filter(
+      (chipDto) => chipDto.chipSetOpaqueId == opaqueId,
+    );
+    return { name, chips } as CreateChipSetDto;
+  },
+);
+
+export const testOrphanChipEntities = testChipDbRows.map((chipRow) => {
+  const { color, value } = chipRow;
+  return { color, value } as ChipEntity;
+});
+
 export const testAdminLP = { username: 'admin', password: 'passify' };
+
 const testAdminPassHash = bcrypt.hashSync(testAdminLP.password, 2);
-export const testAdmin = new PlayerEntityModel('admin', testAdminPassHash);
+export const testAdmin = new PlayerEntity('admin', testAdminPassHash);

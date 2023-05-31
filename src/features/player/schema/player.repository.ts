@@ -1,4 +1,4 @@
-import { FeatureRepository } from '@/util/root.types';
+import { FeatureRepository } from '@/types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
 import { In, Repository } from 'typeorm';
@@ -18,11 +18,11 @@ export class PlayerRepository implements FeatureRepository<Player> {
     throw new Error('Method not implemented: PlayerRepository:getAll');
   }
 
-  async getOneById(id: number): Promise<PlayerEntity> {
+  async oneById(id: number): Promise<PlayerEntity> {
     return this.playerDsRepository.findOneBy({ id });
   }
 
-  async getOneByOpaqueId(opaqueId: UUID): Promise<PlayerEntity> {
+  async oneByOid(opaqueId: UUID): Promise<PlayerEntity> {
     return this.playerDsRepository.findOneBy({ opaqueId });
   }
 
@@ -36,7 +36,7 @@ export class PlayerRepository implements FeatureRepository<Player> {
     return this.playerDsRepository.findOneBy({ username });
   }
 
-  async getManyByIds(ids: readonly number[]): Promise<PlayerEntity[]> {
+  async getManyByIds(_ids: readonly number[]): Promise<PlayerEntity[]> {
     throw new Error('Method not implemented: PlayerRepository:getManyByIds');
   }
 }

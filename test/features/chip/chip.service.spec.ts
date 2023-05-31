@@ -2,8 +2,8 @@ import { EntityManager, Repository } from 'typeorm';
 import { UUID } from 'crypto';
 
 import { ChipEntityModel } from '@/features/chip/schema/chip.gql.model';
-import { ChipService } from '@/features/chip/chip.service';
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
+import { ChipService } from '@/features/chip/services/chip.service';
+import { ChipSetService } from '@/features/chipSet/services/chipSet.service';
 
 import {
   testChipDtos,

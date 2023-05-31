@@ -1,3 +1,3 @@
-export interface ChipSetCore {
+export class ChipSetCore {
   name: string;
 }

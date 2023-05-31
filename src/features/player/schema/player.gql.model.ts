@@ -1,10 +1,7 @@
+import { Field, ObjectType } from '@nestjs/graphql';
 import { UUID } from 'crypto';
 
-import { Field, ObjectType } from '@nestjs/graphql';
-
-import { GqlModel } from '@/util/root.types';
-
-import { SqlBool } from '@/datasource/sqlite.util';
+import { GqlModel } from '@/types';
 
 import { Player } from './player.domain.object';
 import { PlayerCore } from './player.core';
@@ -21,18 +18,4 @@ export class PlayerModel implements PlayerCore, GqlModel<Player> {
   @Field() username: string;
   @Field() passhash: string;
   @Field() isAdmin: boolean = false;
-
-  // static fromDomainObject(player: Player): PlayerModel {
-  //   return new PlayerModel(player.username, player.opaqueId, null);
-  // }
-
-  // toDomainObject(): Player {
-  //   return new Player(
-  //     this.username,
-  //     this.passhash,
-  //     null,
-  //     this.opaqueId,
-  //     this.isAdmin == SqlBool.True,
-  //   );
-  // }
 }

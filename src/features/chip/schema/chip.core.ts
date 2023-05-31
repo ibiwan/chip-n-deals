@@ -1,4 +1,4 @@
-import { CoreObject } from '@/util/root.types';
+import { CoreObject } from '@/types';
 
 export interface ChipCore extends CoreObject {
   color: string;

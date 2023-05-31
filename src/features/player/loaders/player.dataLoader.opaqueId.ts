@@ -2,30 +2,21 @@ import { NestDataLoader } from 'nestjs-dataloader';
 import { Injectable } from '@nestjs/common';
 import * as DataLoader from 'dataloader';
 
-import {
-  PlayerDataByOpaqueIdLoader,
-  PlayerIdType,
-  PlayerOpaqueIdType,
-} from './player.loader.types';
-import { PlayerRepository, PlayerEntity } from '../schema';
+import { PlayerEntity } from '../schema/player.db.entity';
+import { PlayerRepository } from '../schema/player.repository';
+import { Oid } from '@/types/misc.types';
+
+export type PlayerByOpaqueIdLoader = DataLoader<Oid, PlayerEntity>;
 
 @Injectable()
-export class PlayerByOpaqueIdLoader
-  implements NestDataLoader<PlayerIdType, PlayerEntity>
+export class PlayerByOpaqueIdFactory
+  implements NestDataLoader<Oid, PlayerEntity>
 {
   constructor(private playerRepository: PlayerRepository) {}
 
-  generateDataLoader(): PlayerDataByOpaqueIdLoader {
-    return new DataLoader<PlayerOpaqueIdType, PlayerEntity>(async (keys) => {
-      const playerEntities = await this.playerRepository.getManyByOpaqueIds(
-        keys,
-      );
-
-      const sortedPlayerEntities = keys.map((key) =>
-        playerEntities.find((set) => set.opaqueId == key),
-      );
-
-      return sortedPlayerEntities;
-    });
+  generateDataLoader(): PlayerByOpaqueIdLoader {
+    return new DataLoader<Oid, PlayerEntity>(async (keys) =>
+      this.playerRepository.getManyByOpaqueIds(keys),
+    );
   }
 }

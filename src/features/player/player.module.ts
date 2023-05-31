@@ -2,26 +2,25 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
-import { AuthenticationModule } from '@/auth/authentication/authn.module';
-import { AuthorizationModule } from '@/auth/authorization/authz.module';
-
-import { PlayerByOpaqueIdLoader } from './loaders/player.dataLoader.opaqueId';
-import { PlayerRepository, PlayerEntity, PlayerMapper } from './schema';
+import { PlayerByIdFactory } from './loaders/player.dataLoader.id';
+import { PlayerByOpaqueIdFactory } from './loaders/player.dataLoader.opaqueId';
+import { PlayerEntity } from './schema/player.db.entity';
+import { PlayerMapper } from './schema/player.mapper';
+import { PlayerRepository } from './schema/player.repository';
 import { PlayerService } from './player.service';
-import { PlayerByIdLoader } from './loaders';
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
   imports: [
-    forwardRef(() => AuthenticationModule),
-    forwardRef(() => AuthorizationModule),
     forwardRef(() => ConfigModule),
-    forwardRef(() => TypeOrmModule.forFeature([PlayerEntity])),
+    forwardRef(() => AuthModule),
+    TypeOrmModule.forFeature([PlayerEntity]),
   ],
 
   providers: [
-    PlayerByOpaqueIdLoader,
+    PlayerByOpaqueIdFactory,
     PlayerRepository,
-    PlayerByIdLoader,
+    PlayerByIdFactory,
     PlayerService,
     PlayerMapper,
   ],

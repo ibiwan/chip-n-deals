@@ -1,32 +1,20 @@
-import * as DataLoader from 'dataloader';
 import { NestDataLoader } from 'nestjs-dataloader';
 import { Injectable } from '@nestjs/common';
+import * as DataLoader from 'dataloader';
 
-import { Chip, ChipEntity, ChipRepository } from '../schema';
-import { ChipDataLoader, ChipIdType } from './chip.loader.types';
+import { ChipRepository } from '../services/chip.repository';
+import { ChipEntity } from '../schema';
+import { Id } from '@/types/misc.types';
+
+export type ChipsByChipSetIdLoader = DataLoader<Id, ChipEntity>;
 
 @Injectable()
-export class ChipsByChipSetIdLoader
-  implements NestDataLoader<ChipIdType, Chip>
-{
+export class ChipsByChipSetIdFactory implements NestDataLoader<Id, ChipEntity> {
   constructor(private chipRepository: ChipRepository) {}
 
-  generateDataLoader(): ChipDataLoader {
-    return new DataLoader<ChipIdType, ChipEntity>(async (keys) => {
-      const chipEntities = await this.chipRepository.getManyByIds(keys);
-
-      const sortedChips = chipEntities.reduce(
-        (acc: object, cur: ChipEntity) => {
-          if (!(cur.chipSetId in acc)) {
-            acc[cur.chipSetId] = [];
-          }
-          acc[cur.chipSetId].push(cur);
-          return acc;
-        },
-        {},
-      );
-
-      return keys.map((key) => sortedChips[key]);
-    });
+  generateDataLoader(): ChipsByChipSetIdLoader {
+    return new DataLoader<Id, ChipEntity>(async (keys) =>
+      this.chipRepository.getManyByIds(keys),
+    );
   }
 }

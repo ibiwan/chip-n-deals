@@ -1,6 +1,9 @@
-import { OwnableObjectService } from '@/util/root.types';
-import { ID, OWNERSHIP_GETTER } from '../auth.util';
 import { SetMetadata, applyDecorators } from '@nestjs/common';
+
+import { OwnableObjectService } from '@/types';
+
+import { ID, OWNERSHIP_GETTER } from '@/util/auth.util';
+
 export const Unowned = Symbol('Unowned');
 
 export class CreateForParent {
@@ -18,5 +21,3 @@ export type OwnershipSpecification = CreateForParent | UpdateTarget;
 export const OwnedMethod = (self: OwnershipSpecification) => {
   return applyDecorators(SetMetadata(OWNERSHIP_GETTER, self));
 };
-
-console.log('authz', { OwnedMethod });

@@ -1,6 +1,7 @@
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
-
 import {
   Inject,
   Injectable,
@@ -8,13 +9,10 @@ import {
   UnauthorizedException,
   forwardRef,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 
 import { Timer } from '@/util/timer.class';
 
-import { PlayerService } from '@/features/player/player.service';
-import { PlayerRepository } from '@/features/player';
+import { PlayerRepository, PlayerService } from '@/features/player';
 
 @Injectable()
 export class AuthorizationService {

@@ -1,18 +1,15 @@
 import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 
-import { PlayerService } from '@/features/player/player.service';
-import { ChipService } from '@/features/chip/chip.service';
-import { ChipSetService } from '@/features/chipSet/chipSet.service';
+import { ChipSetService } from '@/features/chipSet';
+import { PlayerService } from '@/features/player';
+import { ChipService } from '@/features/chip';
 
 @Injectable()
 export class FeatureDispatchService {
   constructor(
-    @Inject(forwardRef(() => PlayerService))
-    private playerService,
-    @Inject(forwardRef(() => ChipService))
-    private chipService,
-    @Inject(forwardRef(() => ChipSetService))
-    private chipSetService,
+    @Inject(forwardRef(() => ChipService)) private chipService,
+    @Inject(forwardRef(() => ChipSetService)) private chipSetService,
+    @Inject(forwardRef(() => PlayerService)) private playerService,
   ) {}
 
   private readonly logger = new Logger(this.constructor.name);
@@ -26,11 +23,14 @@ export class FeatureDispatchService {
       `dispatchFeatureService, ${serviceType.name}.${method}`,
     );
 
-    if (serviceType === ChipService) {
-      return this.chipService[method](...params);
-    }
     if (serviceType === ChipSetService) {
       return this.chipSetService[method](...params);
+    }
+    if (serviceType === PlayerService) {
+      return this.playerService[method](...params);
+    }
+    if (serviceType === ChipService) {
+      return this.chipService[method](...params);
     }
     throw Error("DISPATCH DOESN'T KNOW WHAT TO DO");
   }

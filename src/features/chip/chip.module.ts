@@ -1,39 +1,25 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { OwnershipModule } from '@/auth/ownership/ownership.module';
-
-import { ChipSetModule, ChipSetEntity } from '@/features/chipSet';
+import { ChipSetModule } from '@/features/chipSet';
 import { PlayerModule } from '@/features/player';
+import { AuthModule } from '@/auth/auth.module';
 
-import {
-  ChipsByChipSetOpaqueIdLoader,
-  ChipsByChipSetIdLoader,
-  ChipsByChipIdLoader,
-} from './loaders';
+import { allResolvers } from './resolvers';
+import { allServices } from './services';
+import { allLoaders } from './loaders';
 
-import { ChipRepository, ChipEntity, ChipMapper } from './schema';
-
-import { ChipResolver } from './chip.resolver';
-import { ChipService } from './chip.service';
+import { ChipEntity } from './schema';
 
 @Module({
   imports: [
-    // forwardRef accommodates circular references
     forwardRef(() => ChipSetModule),
-    forwardRef(() => OwnershipModule),
+    forwardRef(() => AuthModule),
     forwardRef(() => PlayerModule),
-    forwardRef(() => TypeOrmModule.forFeature([ChipEntity, ChipSetEntity])),
+
+    TypeOrmModule.forFeature([ChipEntity]),
   ],
-  providers: [
-    ChipsByChipSetOpaqueIdLoader,
-    ChipsByChipSetIdLoader,
-    ChipsByChipIdLoader,
-    ChipRepository,
-    ChipResolver,
-    ChipService,
-    ChipMapper,
-  ],
-  exports: [ChipService, ChipMapper],
+  providers: [...allServices, ...allLoaders, ...allResolvers],
+  exports: allServices,
 })
 export class ChipModule {}

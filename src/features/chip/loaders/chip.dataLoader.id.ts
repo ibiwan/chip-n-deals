@@ -2,22 +2,21 @@ import { NestDataLoader } from 'nestjs-dataloader';
 import { Injectable } from '@nestjs/common';
 import * as DataLoader from 'dataloader';
 
-import { ChipEntity, ChipRepository } from '../schema';
-import { ChipDataLoader, ChipIdType } from './chip.loader.types';
+import { ChipRepository } from '../services';
+import { ChipEntity } from '../schema';
+import { Id } from '@/types/misc.types';
+
+export type ChipsByChipIdLoader = DataLoader<Id, ChipEntity>;
 
 @Injectable()
-export class ChipsByChipIdLoader
-  implements NestDataLoader<ChipIdType, ChipEntity>
+export class ChipsByChipIdFactory
+  implements NestDataLoader<number, ChipEntity>
 {
   constructor(private chipRepository: ChipRepository) {}
 
-  generateDataLoader(): ChipDataLoader {
-    return new DataLoader<ChipIdType, ChipEntity>(async (keys) => {
-      const results = await this.chipRepository.getManyByIds(keys);
-
-      return results.filter(
-        (result: ChipEntity | Error) => result instanceof ChipEntity,
-      ) as ChipEntity[];
-    });
+  generateDataLoader(): ChipsByChipIdLoader {
+    return new DataLoader<Id, ChipEntity>(async (keys) =>
+      this.chipRepository.getManyByIds(keys),
+    );
   }
 }

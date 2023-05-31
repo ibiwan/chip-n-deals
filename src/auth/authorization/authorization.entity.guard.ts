@@ -6,16 +6,10 @@ import {
   NestInterceptor,
   CallHandler,
   Injectable,
-  forwardRef,
-  Inject,
 } from '@nestjs/common';
 
 import { FeatureDispatchService } from '@/auth/ownership/feature.dispatch.service';
-import {
-  extractRequestFromContext,
-  OWNERSHIP_GETTER,
-  ID,
-} from '@/auth/auth.util';
+import { reqFromCtx, OWNERSHIP_GETTER, ID } from '@/util/auth.util';
 
 import {
   OwnershipSpecification,
@@ -25,7 +19,7 @@ import {
 } from './owned.decorator';
 
 @Injectable()
-export class EntityGuard implements NestInterceptor {
+export class AuthorizationEntityGuard implements NestInterceptor {
   constructor(
     // @Inject(forwardRef(() => FeatureDispatchService))
     // private featureDispatchService: FeatureDispatchService,
@@ -37,7 +31,7 @@ export class EntityGuard implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Promise<Observable<any>> {
-    const request = extractRequestFromContext(context);
+    const request = reqFromCtx(context);
 
     const user = (request as any).user;
     const handler = context.getHandler();
@@ -68,7 +62,7 @@ export class EntityGuard implements NestInterceptor {
         //     [id],
         //   );
 
-        const owners = null;
+        const owners = [Unowned];
         // await this.featureDispatchService.dispatchFeatureService(
         //   serviceType,
         //   'getAllOwners',
@@ -82,6 +76,7 @@ export class EntityGuard implements NestInterceptor {
 
       return next.handle();
     } catch (e) {
+      console.log(e);
       if (e instanceof UnauthorizedException) {
         throw e;
       } else {

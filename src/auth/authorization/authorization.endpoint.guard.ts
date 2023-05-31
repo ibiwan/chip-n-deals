@@ -13,21 +13,14 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 
-import {
-  extractTokenFromRequestHeader,
-  extractRequestFromContext,
-  IS_PUBLIC_KEY,
-} from '@/auth/auth.util';
-import { PlayerService } from '@/features/player/player.service';
+import { tokenFromReq, reqFromCtx, IS_PUBLIC_KEY } from '@/util/auth.util';
 import { PlayerRepository } from '@/features/player';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthorizationEndpointGuard implements CanActivate {
   constructor(
     @Inject(forwardRef(() => JwtService))
     private jwtService: JwtService,
-    @Inject(forwardRef(() => PlayerService))
-    private playerService: PlayerService,
     @Inject(forwardRef(() => PlayerRepository))
     private playerRepository: PlayerRepository,
 
@@ -53,9 +46,9 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const request = extractRequestFromContext(context);
+    const request = reqFromCtx(context);
 
-    const token = extractTokenFromRequestHeader(request);
+    const token = tokenFromReq(request);
     if (!token) {
       this.logger.error(`unauthorized access: no token in request`);
 
@@ -63,7 +56,7 @@ export class AuthGuard implements CanActivate {
     }
 
     const userClaims = (await this.verifyToken(token)) as any;
-    const userEntity = await this.playerRepository.getOneByOpaqueId(
+    const userEntity = await this.playerRepository.oneByOid(
       userClaims.sub as UUID,
     );
     if (!userEntity) {

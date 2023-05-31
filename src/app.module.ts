@@ -1,22 +1,27 @@
 import { DataLoaderInterceptor } from 'nestjs-dataloader';
 
 import { ConfigModule } from '@nestjs/config';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
-import { SqliteDatasourceModule } from '@/datasource/sqlite.datasource.module';
+import { SqliteDsModule } from '@/datasource/sqlite.datasource.module';
 import { GraphqlApiModule } from '@/api/graphql.api.module';
-import { FeatureModule } from '@/features/features.module';
-import { AuthModule } from '@/auth/auth.module';
-import { AllExceptionsFilter } from './util/exception.handler';
+import { ChipModule } from './features/chip';
+import { ChipSetModule } from './features/chipSet';
+import { PlayerModule } from './features/player';
+import { TableModule } from './features/table/table.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    SqliteDatasourceModule,
-    GraphqlApiModule,
-    FeatureModule,
-    AuthModule,
+    forwardRef(() => SqliteDsModule),
+    forwardRef(() => GraphqlApiModule),
+    forwardRef(() => ChipSetModule),
+    forwardRef(() => PlayerModule),
+    forwardRef(() => TableModule),
+    forwardRef(() => AuthModule),
+    forwardRef(() => ChipModule),
   ],
   providers: [
     {

@@ -1,13 +1,15 @@
-import { UUID, randomUUID } from 'crypto';
+import { UUID } from 'crypto';
+import * as _ from 'lodash';
 import {
   PrimaryGeneratedColumn,
   JoinColumn,
   ManyToOne,
+  Generated,
   Column,
   Entity,
 } from 'typeorm';
 
-import { DBEntity } from '@/util/root.types';
+import { CoreObject, DBEntity, from } from '@/types';
 
 import { ChipSetEntity } from '@/features/chipSet';
 import { PlayerEntity } from '@/features/player';
@@ -16,7 +18,9 @@ import { Chip } from './chip.domain.object';
 import { ChipCore } from './chip.core';
 
 @Entity('chip')
-export class ChipEntity implements ChipCore, DBEntity<Chip> {
+export class ChipEntity extends CoreObject implements ChipCore, DBEntity<Chip> {
+  static from = from(() => ChipEntity.prototype);
+
   constructor(
     opaqueId: UUID = null,
     color: string,
@@ -24,7 +28,8 @@ export class ChipEntity implements ChipCore, DBEntity<Chip> {
     chipSet: ChipSetEntity = null,
     owner: PlayerEntity = null,
   ) {
-    this.opaqueId = opaqueId ?? randomUUID();
+    super();
+    this.opaqueId = opaqueId;
     this.color = color;
     this.value = value;
     this.chipSet = chipSet;
@@ -34,19 +39,21 @@ export class ChipEntity implements ChipCore, DBEntity<Chip> {
       this.chipSetId = this.chipSet.id;
     }
     if (this.owner) {
-      this.ownerId = this.owner.id;
+      this.ownerId = this.id;
     }
   }
 
   @PrimaryGeneratedColumn()
   id?: number;
 
-  @Column() opaqueId?: UUID;
+  @Generated('uuid')
+  @Column()
+  opaqueId?: UUID;
   @Column() color: string;
   @Column() value: number;
 
   @ManyToOne(() => ChipSetEntity, (chipSet) => chipSet.chips, {
-    cascade: ['insert', 'update'],
+    // cascade: ['insert', 'update'],
   })
   @JoinColumn({ name: 'chipSetId' })
   chipSet: ChipSetEntity;

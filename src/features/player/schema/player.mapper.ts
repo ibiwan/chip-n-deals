@@ -1,51 +1,14 @@
-import {
-  DBEntity,
-  DomainObjectMapper,
-  DtoObject,
-  GqlModel,
-} from '@/util/root.types';
 import { Injectable } from '@nestjs/common';
+
+import { SqlBool } from '@/util/sqlite.util';
+import { DBEntity, DomainObjectMapper, DtoObject, GqlModel } from '@/types';
 
 import { PlayerEntity } from './player.db.entity';
 import { PlayerModel } from './player.gql.model';
 import { Player } from './player.domain.object';
-import { SqlBool } from '@/datasource/sqlite.util';
 
 @Injectable()
 export class PlayerMapper implements DomainObjectMapper<Player> {
-  dbFromDto(dto: DtoObject<Player>, ...more: any): Promise<DBEntity<Player>> {
-    throw new Error('Method not implemented.');
-  }
-  dbFromDomainMany(_obj: Player[]): Promise<DBEntity<Player>[]> {
-    throw new Error('Method not implemented.');
-  }
-  dbFromGqlMany(
-    mod: GqlModel<Player>[],
-    ...more: any
-  ): Promise<DBEntity<Player>[]> {
-    throw new Error('Method not implemented.');
-  }
-  async gqlFromDomainMany(
-    _obj: Player[],
-    ...more: any
-  ): Promise<PlayerModel[]> {
-    throw new Error('Method not implemented: PlayerMapper:gqlFromDomainMany');
-  }
-
-  async gqlFromDbMany(
-    ent: PlayerEntity[],
-    ...more: any
-  ): Promise<GqlModel<Player>[]> {
-    throw new Error('Method not implemented: PlayerMapper:gqlFromDbMany');
-  }
-
-  async domainFromDbMany(
-    ents: PlayerEntity[],
-    ...more: any
-  ): Promise<Player[]> {
-    throw new Error('Method not implemented: PlayerMapper:domainFromDbMany');
-  }
-
   async gqlFromDomain(player: Player): Promise<PlayerModel> {
     const playerModel = new PlayerModel(
       player.username,
@@ -79,7 +42,7 @@ export class PlayerMapper implements DomainObjectMapper<Player> {
 
   async domainFromDb(
     playerEntity: PlayerEntity,
-    ...more: any
+    ..._more: any
   ): Promise<Player> {
     return new Player(
       playerEntity.username,
@@ -89,8 +52,46 @@ export class PlayerMapper implements DomainObjectMapper<Player> {
       playerEntity.isAdmin == SqlBool.True,
     );
   }
+  dbFromDtoMany(
+    _dto: DtoObject<Player>[],
+    ..._more: any
+  ): Promise<DBEntity<Player>[]> {
+    throw new Error('Method not implemented.');
+  }
+  dbFromDto(_dto: DtoObject<Player>, ..._more: any): Promise<DBEntity<Player>> {
+    throw new Error('Method not implemented.');
+  }
+  dbFromDomainMany(_obj: Player[]): Promise<DBEntity<Player>[]> {
+    throw new Error('Method not implemented.');
+  }
+  dbFromGqlMany(
+    _mod: GqlModel<Player>[],
+    ..._more: any
+  ): Promise<DBEntity<Player>[]> {
+    throw new Error('Method not implemented.');
+  }
+  async gqlFromDomainMany(
+    _obj: Player[],
+    ..._more: any
+  ): Promise<PlayerModel[]> {
+    throw new Error('Method not implemented: PlayerMapper:gqlFromDomainMany');
+  }
 
-  async dbFromGql(mod: GqlModel<Player>): Promise<PlayerEntity> {
+  async gqlFromDbMany(
+    _ent: PlayerEntity[],
+    ..._more: any
+  ): Promise<GqlModel<Player>[]> {
+    throw new Error('Method not implemented: PlayerMapper:gqlFromDbMany');
+  }
+
+  async domainFromDbMany(
+    _ents: PlayerEntity[],
+    ..._more: any
+  ): Promise<Player[]> {
+    throw new Error('Method not implemented: PlayerMapper:domainFromDbMany');
+  }
+
+  async dbFromGql(_mod: GqlModel<Player>): Promise<PlayerEntity> {
     throw new Error('Method not implemented: PlayerMapper:dbFromGql');
   }
 }

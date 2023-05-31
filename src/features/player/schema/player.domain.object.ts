@@ -1,6 +1,6 @@
 import { UUID } from 'crypto';
 
-import { DomainObject } from '@/util/root.types';
+import { DomainObject } from '@/types';
 
 import { PlayerCore } from './player.core';
 

@@ -8,9 +8,11 @@ import { AllExceptionsFilter } from '@/util/exception.handler';
 import { GraphqlApiModule } from '@/api/graphql.api.module';
 import { FeatureModule } from '@/features/features.module';
 import { TestLogger } from '@/util/logger.class';
-import { AuthModule } from '@/auth/auth.module';
 
 import { TestDatasourceModule } from './test.datasource.module';
+import { AuthorizationModule } from '@/auth/authorization/authorization.module';
+import { AuthenticationModule } from '@/auth/authentication/authentication.module';
+import { OwnershipModule } from '@/auth/ownership/ownership.module';
 
 export const getTestRootModule = async (): Promise<TestingModule> => {
   const testModuleBuilder = await Test.createTestingModule({
@@ -19,7 +21,9 @@ export const getTestRootModule = async (): Promise<TestingModule> => {
       TestDatasourceModule,
       GraphqlApiModule,
       FeatureModule,
-      AuthModule,
+      AuthorizationModule,
+      AuthenticationModule,
+      OwnershipModule,
     ],
     providers: [
       TestLogger,

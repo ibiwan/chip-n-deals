@@ -1,17 +1,13 @@
-import { EntityManager } from 'typeorm';
-import { UUID, randomUUID } from 'crypto';
-
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
+import { UUID } from 'crypto';
+import { EntityManager } from 'typeorm';
 
-import { AuthorizationService } from '@/auth/authentication/authn.service';
-
-import {
-  PlayerRepository,
-  CreatePlayerDto,
-  PlayerMapper,
-  Player,
-} from './schema';
+import { AuthorizationService } from '@/auth/authorization/authorization.service';
+import { PlayerRepository } from './schema/player.repository';
+import { PlayerMapper } from './schema/player.mapper';
+import { Player } from './schema/player.domain.object';
+import { CreatePlayerDto } from './schema/player.gql.dto.create';
 
 @Injectable()
 export class PlayerService {
@@ -27,13 +23,13 @@ export class PlayerService {
   ) {}
 
   async playerByOpaqueId(opaqueId: UUID): Promise<Player> {
-    const playerEntity = await this.playerRepository.getOneByOpaqueId(opaqueId);
+    const playerEntity = await this.playerRepository.oneByOid(opaqueId);
 
     return this.playerMapper.domainFromDb(playerEntity);
   }
 
   async playerById(id: number): Promise<Player> {
-    const playerEntity = await this.playerRepository.getOneById(id);
+    const playerEntity = await this.playerRepository.oneById(id);
 
     return this.playerMapper.domainFromDb(playerEntity);
   }
@@ -66,7 +62,6 @@ export class PlayerService {
   async createAdmin(adminName: string, adminHash: string): Promise<Player> {
     const player = new Player(adminName, adminHash);
     player.isAdmin = true;
-    player.opaqueId = randomUUID();
 
     const playerEntity = await this.playerMapper.dbFromDomain(player);
 

@@ -1,6 +1,7 @@
 import { UUID } from 'crypto';
+import * as _ from 'lodash';
 
-import { DomainObject, OwnableObject } from '@/util/root.types';
+import { DomainObject, OwnableObject, from } from '@/types';
 
 import { ChipSet } from '@/features/chipSet';
 import { Player } from '@/features/player';
@@ -18,11 +19,15 @@ export class Chip implements ChipCore, DomainObject, OwnableObject<Chip> {
   ) {
     this.color = color;
     this.value = value;
+
     this.id = id;
     this.opaqueId = opaqueId;
+
     this.chipSet = chipSet;
     this.owner = owner;
   }
+
+  static from = from(() => Chip.prototype);
 
   color: string;
   value: number;

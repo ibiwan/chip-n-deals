@@ -3,20 +3,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 
-import { OwnableObjectService } from '@/util/root.types';
-import { ID } from '@/auth/auth.util';
-
-import { Player } from '@/features/player';
-
-import {
-  chipSetCreateDtoToDomainObject,
-  ChipSetRepository,
-  CreateChipSetDto,
-  ChipSetEntity,
-  ChipSetMapper,
-  ChipSet,
-} from './schema';
 import { Unowned } from '@/auth/authorization/owned.decorator';
+import { OwnableObjectService } from '@/types';
+import { ID } from '@/util/auth.util';
+
+import { PlayerEntity } from '@/features/player';
+
+import { ChipSet, ChipSetEntity, CreateChipSetDto } from '../schema';
+
+import { ChipSetRepository } from './chipSet.repository';
+import { ChipSetMapper } from './chipSet.mapper';
 
 @Injectable()
 export class ChipSetService implements OwnableObjectService<ChipSet, null> {
@@ -44,14 +40,15 @@ export class ChipSetService implements OwnableObjectService<ChipSet, null> {
   }
 
   async chipSet(opaqueId: UUID): Promise<ChipSet> {
-    const chipSetEntity: ChipSetEntity =
-      await this.chipSetRepository.getOneByOpaqueId(opaqueId);
+    const chipSetEntity: ChipSetEntity = await this.chipSetRepository.oneByOid(
+      opaqueId,
+    );
 
     return this.chipSetMapper.domainFromDb(chipSetEntity);
   }
 
   async chipSetById(id: number): Promise<ChipSet> {
-    const chipSetEntity = await this.chipSetRepository.getOneById(id);
+    const chipSetEntity = await this.chipSetRepository.oneById(id);
     return this.chipSetMapper.domainFromDb(chipSetEntity);
   }
 
@@ -67,14 +64,14 @@ export class ChipSetService implements OwnableObjectService<ChipSet, null> {
     return this.chipSetMapper.domainFromDbMany(chipSetEntities);
   }
 
-  async create(data: CreateChipSetDto, owner: Player): Promise<ChipSet> {
-    const chipSet: ChipSet = chipSetCreateDtoToDomainObject(data, owner);
+  async create(data: CreateChipSetDto, owner: PlayerEntity): Promise<ChipSet> {
+    const chipSetEntity = await this.chipSetMapper.dbFromDto(data, owner);
 
-    const chipSetEntity = await this.chipSetMapper.dbFromDomain(chipSet);
-
+    console.log({ chipSetEntity });
     await this.em.save(chipSetEntity);
 
-    return this.chipSetMapper.domainFromDb(chipSetEntity);
+    const chipSet = await this.chipSetMapper.domainFromDb(chipSetEntity);
+    return chipSet;
   }
 
   async getParent(_chipSet: ChipSet) {

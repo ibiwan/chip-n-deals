@@ -1,18 +1,18 @@
 import {
-  Body,
   Controller,
-  HttpCode,
   HttpStatus,
+  HttpCode,
   Logger,
+  Body,
   Post,
 } from '@nestjs/common';
 
-import { Public } from '@/auth/auth.util';
+import { Public } from '@/util/auth.util';
 
-import { AuthorizationService } from './authn.service';
+import { AuthorizationService } from '../authorization/authorization.service';
 
 @Controller('auth')
-export class AuthController {
+export class AuthenticationController {
   constructor(private authService: AuthorizationService) {}
 
   private readonly logger = new Logger(this.constructor.name);

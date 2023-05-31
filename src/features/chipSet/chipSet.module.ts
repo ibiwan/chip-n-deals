@@ -1,31 +1,25 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { OwnershipModule } from '@/auth/ownership/ownership.module';
+import { AuthModule } from '@/auth/auth.module';
+
 import { PlayerModule } from '@/features/player';
+import { ChipModule } from '@/features/chip';
 
-import { ChipEntity, ChipModule } from '@/features/chip';
+import { allServices } from './services';
+import { allLoaders } from './loaders';
+import { allResolvers } from './resolvers';
 
-import { ChipSetByIdLoader, ChipSetByOpaqueIdLoader } from './loaders';
-import { ChipSetEntity, ChipSetMapper, ChipSetRepository } from './schema';
-import { ChipSetResolver } from './chipSet.resolver';
-import { ChipSetService } from './chipSet.service';
+import { ChipSetEntity } from './schema/chipSet.db.entity';
 
 @Module({
   imports: [
     forwardRef(() => ChipModule),
-    forwardRef(() => OwnershipModule),
+    forwardRef(() => AuthModule),
     forwardRef(() => PlayerModule),
-    TypeOrmModule.forFeature([ChipEntity, ChipSetEntity]),
+    TypeOrmModule.forFeature([ChipSetEntity]),
   ],
-  providers: [
-    ChipSetByOpaqueIdLoader,
-    ChipSetRepository,
-    ChipSetByIdLoader,
-    ChipSetResolver,
-    ChipSetService,
-    ChipSetMapper,
-  ],
-  exports: [ChipSetService, ChipSetMapper, ChipSetRepository],
+  providers: [...allLoaders, ...allResolvers, ...allServices],
+  exports: allServices,
 })
 export class ChipSetModule {}

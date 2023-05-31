@@ -1,11 +1,12 @@
 import { UUID } from 'crypto';
 
-import { DomainObject, OwnableObject } from '@/util/root.types';
+import { DomainObject, OwnableObject } from '@/types';
 
 import { Player } from '@/features/player';
 import { Chip } from '@/features/chip';
 
 import { ChipSetCore } from './chipSet.core';
+import { ChipSetMeta } from './chipSet.meta';
 
 export class ChipSet
   implements ChipSetCore, DomainObject, OwnableObject<ChipSet>
@@ -24,6 +25,12 @@ export class ChipSet
     this.owner = owner;
   }
 
+  static from(source: ChipSetMeta, fields: Record<string, any> = {}): ChipSet {
+    const chipSet = Object.create(ChipSet.prototype);
+    Object.assign(chipSet, source, fields);
+
+    return chipSet;
+  }
   name: string;
   id: number;
   opaqueId: UUID;

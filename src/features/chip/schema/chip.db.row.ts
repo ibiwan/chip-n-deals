@@ -2,7 +2,7 @@ import { UUID } from 'crypto';
 
 import { ChipCore } from './chip.core';
 
-export interface ChipDbRow extends ChipCore {
+export class ChipDbRow implements ChipCore {
   id: number;
   opaqueId: UUID;
   color: string;

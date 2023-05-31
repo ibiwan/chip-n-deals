@@ -1,4 +1,4 @@
-import { AuthorizationService } from '@/auth/authentication/authn.service';
+import { AuthorizationService } from '@/auth/authorization/authorization.service';
 import { getTestRootModule } from '@test/helpers/testing.module';
 
 describe('AuthorizationService', () => {
